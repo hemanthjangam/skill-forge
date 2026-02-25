@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Forge - Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<main class="dash-shell">
+    <header class="dash-header">
+        <div>
+            <p class="tag">Skill Forge Dashboard</p>
+            <h1 id="title">Workspace</h1>
+            <p class="meta" id="meta"></p>
+        </div>
+        <div>
+            <button id="meBtn" class="outline" type="button">My Profile</button>
+            <button id="logoutBtn" class="danger" type="button">Logout</button>
+        </div>
+    </header>
+
+    <section id="commonPanel" class="dash-panel">
+        <h2>Account</h2>
+        <div class="actions">
+            <button class="action" data-path="/users/me" data-method="GET" type="button">Get My Profile</button>
+            <button class="action" id="updateMeBtn" type="button">Update My Profile</button>
+            <button class="danger" id="deleteMeBtn" type="button">Deactivate My Account</button>
+        </div>
+        <form id="updateMeForm" class="form-grid">
+            <label>Username
+                <input name="username">
+            </label>
+            <label>Email
+                <input name="email" type="email">
+            </label>
+            <label>Password
+                <input name="password" type="password">
+            </label>
+        </form>
+    </section>
+
+    <section id="trainerPanel" class="dash-panel hidden">
+        <h2>Trainer</h2>
+        <div class="actions">
+            <button class="action" data-path="/users/trainer/profile" data-method="GET" type="button">Trainer Profile</button>
+            <button class="action" data-path="/users/trainer/learners" data-method="GET" type="button">My Learners</button>
+        </div>
+    </section>
+
+    <section id="learnerPanel" class="dash-panel hidden">
+        <h2>Learner</h2>
+        <div class="actions">
+            <button class="action" data-path="/users/learner/profile" data-method="GET" type="button">Learner Profile</button>
+        </div>
+    </section>
+
+    <section id="adminPanel" class="dash-panel hidden">
+        <h2>Admin Controls</h2>
+        <div class="actions">
+            <button class="action" data-path="/users/admin/dashboard" data-method="GET" type="button">Dashboard Stats</button>
+            <button class="action" data-path="/users/admin/users" data-method="GET" type="button">All Users</button>
+            <button class="action" id="adminGetUserBtn" type="button">Get User By ID</button>
+            <button class="action" id="adminCreateBtn" type="button">Create User</button>
+            <button class="action" id="adminUpdateBtn" type="button">Update User</button>
+            <button class="danger" id="adminDeleteBtn" type="button">Delete User</button>
+        </div>
+        <div class="grid two">
+            <form id="adminTargetForm" class="form-grid">
+                <label>User ID
+                    <input name="id" type="number" min="1">
+                </label>
+                <label>Role Filter
+                    <select name="role">
+                        <option value="LEARNER">LEARNER</option>
+                        <option value="TRAINER">TRAINER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </label>
+                <label>Active
+                    <select name="active">
+                        <option value="true">true</option>
+                        <option value="false">false</option>
+                    </select>
+                </label>
+                <button class="outline" id="adminRoleFilterBtn" type="button">Users By Role</button>
+                <button class="outline" id="adminStatusBtn" type="button">Set Status</button>
+                <button class="outline" id="adminRoleBtn" type="button">Set Role</button>
+            </form>
+
+            <form id="adminPayloadForm" class="form-grid">
+                <label>Username
+                    <input name="username">
+                </label>
+                <label>Email
+                    <input name="email" type="email">
+                </label>
+                <label>Password
+                    <input name="password" type="password">
+                </label>
+                <label>Role
+                    <select name="role">
+                        <option value="">(none)</option>
+                        <option value="LEARNER">LEARNER</option>
+                        <option value="TRAINER">TRAINER</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </label>
+            </form>
+        </div>
+    </section>
+
+    <section class="dash-panel">
+        <h2>Response</h2>
+        <pre id="output">Ready.</pre>
+    </section>
+</main>
+<script src="/dashboard.js"></script>
+</body>
+</html>

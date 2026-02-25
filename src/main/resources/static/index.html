@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Forge - Login</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<main class="auth-shell">
+    <section class="auth-brand">
+        <p class="tag">Skill Forge</p>
+        <h1>Learn. Teach. Manage.</h1>
+        <p class="lead">Sign in to your learner, trainer, or admin workspace.</p>
+    </section>
+
+    <section class="auth-card">
+        <div class="tabs">
+            <button id="showLogin" class="tab active" type="button">Login</button>
+            <button id="showRegister" class="tab" type="button">Register</button>
+        </div>
+
+        <form id="loginForm" class="auth-form">
+            <h2>Welcome back</h2>
+            <label>Email
+                <input name="email" type="email" required>
+            </label>
+            <label>Password
+                <input name="password" type="password" required>
+            </label>
+            <button class="primary" type="submit">Login</button>
+        </form>
+
+        <form id="registerForm" class="auth-form hidden">
+            <h2>Create account</h2>
+            <label>Username
+                <input name="username" required>
+            </label>
+            <label>Email
+                <input name="email" type="email" required>
+            </label>
+            <label>Password
+                <input name="password" type="password" required>
+            </label>
+            <label>Role
+                <select name="role">
+                    <option value="">LEARNER</option>
+                    <option value="LEARNER">LEARNER</option>
+                    <option value="TRAINER">TRAINER</option>
+                </select>
+            </label>
+            <button class="primary" type="submit">Register</button>
+        </form>
+
+        <label class="base-url">API Base URL
+            <input id="apiBase" placeholder="http://localhost:8080">
+        </label>
+
+        <pre id="message" class="message">Ready</pre>
+    </section>
+</main>
+<script src="/login.js"></script>
+</body>
+</html>
