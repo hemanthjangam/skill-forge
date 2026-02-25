@@ -1,7 +1,7 @@
 package com.example.skillforge.entity;
 
 public enum Role {
-    ADMIN,
+    STUDENT,
     TRAINER,
-    LEARNER
+    ADMIN
 }

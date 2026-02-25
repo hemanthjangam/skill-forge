@@ -14,16 +14,15 @@ import java.util.Date;
 
 @Service
 public class JwtService {
+
     private static final String ROLE_CLAIM = "role";
+    private final SecretKey key;
+    private final long expirationMs;
 
-    private final SecretKey signingKey;
-    private final long jwtExpirationMs;
-
-    public JwtService(
-            @Value("${security.jwt.secret}") String jwtSecret,
-            @Value("${security.jwt.expiration-ms}") long jwtExpirationMs) {
-        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
-        this.jwtExpirationMs = jwtExpirationMs;
+    public JwtService(@Value("${security.jwt.secret}") String secret,
+                      @Value("${security.jwt.expiration-ms}") long expirationMs) {
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        this.expirationMs = expirationMs;
     }
 
     public String generateToken(String email, Role role) {
@@ -32,34 +31,29 @@ public class JwtService {
                 .subject(email)
                 .claim(ROLE_CLAIM, role.name())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(jwtExpirationMs)))
-                .signWith(signingKey)
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .signWith(key)
                 .compact();
     }
 
-    public String extractEmail(String token) {
-        return extractClaims(token).getSubject();
-    }
-
-    public Role extractRole(String token) {
-        String role = extractClaims(token).get(ROLE_CLAIM, String.class);
-        return Role.valueOf(role);
-    }
-
-    public boolean isTokenValid(String token) {
+    public boolean isValid(String token) {
         try {
-            Claims claims = extractClaims(token);
+            Claims claims = parse(token);
             return claims.getExpiration().after(new Date());
         } catch (Exception ex) {
             return false;
         }
     }
 
-    private Claims extractClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(signingKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+    public String extractEmail(String token) {
+        return parse(token).getSubject();
+    }
+
+    public Role extractRole(String token) {
+        return Role.valueOf(parse(token).get(ROLE_CLAIM, String.class));
+    }
+
+    private Claims parse(String token) {
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
     }
 }
