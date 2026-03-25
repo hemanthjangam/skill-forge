@@ -18,16 +18,23 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final UserService userService;
 
+    /**
+     * Returns the authenticated user's notification feed.
+     */
     @GetMapping
     public ResponseEntity<PagedResponse<NotificationResponse>> myNotifications(Authentication authentication,
-                                                                               @RequestParam(defaultValue = "0") int page,
-                                                                               @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         User user = userService.getRequiredUserByEmail(authentication.getName());
         return ResponseEntity.ok(notificationService.getMyNotifications(user, page, size));
     }
 
+    /**
+     * Marks a notification as read for its owner.
+     */
     @PatchMapping("/{notificationId}/read")
-    public ResponseEntity<NotificationResponse> markRead(Authentication authentication, @PathVariable Long notificationId) {
+    public ResponseEntity<NotificationResponse> markRead(Authentication authentication,
+            @PathVariable Long notificationId) {
         User user = userService.getRequiredUserByEmail(authentication.getName());
         return ResponseEntity.ok(notificationService.markAsRead(user, notificationId));
     }

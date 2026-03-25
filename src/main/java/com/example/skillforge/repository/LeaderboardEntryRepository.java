@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface LeaderboardEntryRepository extends JpaRepository<LeaderboardEntry, Long> {
     Optional<LeaderboardEntry> findByUser(User user);
     Page<LeaderboardEntry> findAllByOrderByPointsDesc(Pageable pageable);
+    Page<LeaderboardEntry> findAllByOrderByCurrentStreakDescBestStreakDescPointsDesc(Pageable pageable);
 }

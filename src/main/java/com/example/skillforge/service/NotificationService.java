@@ -19,6 +19,9 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
+    /**
+     * Creates a notification for a single user.
+     */
     @Transactional
     public void createNotification(User user, String message) {
         notificationRepository.save(Notification.builder()
@@ -27,6 +30,9 @@ public class NotificationService {
                 .build());
     }
 
+    /**
+     * Returns a paginated notification feed for the authenticated user.
+     */
     public PagedResponse<NotificationResponse> getMyNotifications(User user, int page, int size) {
         Page<Notification> result = notificationRepository.findByUserOrderByCreatedAtDesc(user, PageRequest.of(page, size));
         return PagedResponse.<NotificationResponse>builder()
@@ -38,6 +44,9 @@ public class NotificationService {
                 .build();
     }
 
+    /**
+     * Marks a notification as read after verifying ownership.
+     */
     @Transactional
     public NotificationResponse markAsRead(User user, Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
@@ -51,10 +60,16 @@ public class NotificationService {
         return toDto(notificationRepository.save(notification));
     }
 
+    /**
+     * Returns the count of unread notifications for dashboard and header usage.
+     */
     public long unreadCount(User user) {
         return notificationRepository.countByUserAndReadIsFalse(user);
     }
 
+    /**
+     * Maps a notification entity to the API response shape.
+     */
     private NotificationResponse toDto(Notification notification) {
         return NotificationResponse.builder()
                 .id(notification.getId())

@@ -11,6 +11,7 @@ import java.util.List;
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     long countByModule(LearningModule module);
     List<Question> findByModule(LearningModule module);
+    List<Question> findByModuleOrderByIdAsc(LearningModule module);
 
     @Query("select count(q) from Question q where q.module.course.createdBy = :trainer")
     long countByTrainer(User trainer);

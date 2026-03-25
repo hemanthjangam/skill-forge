@@ -1,5 +1,6 @@
 package com.example.skillforge.dto;
 
+import com.example.skillforge.entity.LessonContentType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -8,6 +9,9 @@ import lombok.Getter;
 public class LessonResponse {
     private Long id;
     private String title;
-    private String content;
+    private LessonContentType contentType;
+    private String textContent;
+    private String imageUrl;
+    private String videoUrl;
     private Long moduleId;
 }

@@ -3,6 +3,8 @@ package com.example.skillforge.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Setter
@@ -22,4 +24,31 @@ public class LeaderboardEntry {
 
     @Column(nullable = false)
     private Integer points;
+
+    @Column(nullable = false)
+    private Integer currentStreak;
+
+    @Column(nullable = false)
+    private Integer bestStreak;
+
+    private LocalDate lastActiveDate;
+
+    @Column(nullable = false)
+    private Integer totalKnowledgeChecks;
+
+    @PrePersist
+    public void prePersist() {
+        if (points == null) {
+            points = 0;
+        }
+        if (currentStreak == null) {
+            currentStreak = 0;
+        }
+        if (bestStreak == null) {
+            bestStreak = 0;
+        }
+        if (totalKnowledgeChecks == null) {
+            totalKnowledgeChecks = 0;
+        }
+    }
 }

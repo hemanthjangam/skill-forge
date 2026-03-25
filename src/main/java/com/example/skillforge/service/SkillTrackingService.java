@@ -20,6 +20,9 @@ public class SkillTrackingService {
     private final SkillRepository skillRepository;
     private final UserSkillLevelRepository userSkillLevelRepository;
 
+    /**
+     * Updates rolling mastery scores for each concept touched in a quiz attempt.
+     */
     @Transactional
     public void updateSkillScores(User user, Map<String, Double> conceptAccuracy) {
         for (Map.Entry<String, Double> entry : conceptAccuracy.entrySet()) {
@@ -47,6 +50,9 @@ public class SkillTrackingService {
         }
     }
 
+    /**
+     * Returns the tracked skill levels for the authenticated learner.
+     */
     public List<UserSkillLevelResponse> getUserSkills(User user) {
         return userSkillLevelRepository.findByUser(user).stream()
                 .map(level -> UserSkillLevelResponse.builder()

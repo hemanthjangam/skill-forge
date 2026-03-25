@@ -10,4 +10,8 @@ public class StudentDashboardResponse {
     private long quizAttempts;
     private double averageQuizScore;
     private long unreadNotifications;
+    private int currentStreak;
+    private int bestStreak;
+    private int knowledgeChecksCompleted;
+    private int totalPoints;
 }

@@ -2,6 +2,8 @@ package com.example.skillforge.controller;
 
 import com.example.skillforge.dto.QuizSubmitRequest;
 import com.example.skillforge.dto.QuizSubmitResponse;
+import com.example.skillforge.dto.QuizRoundRequest;
+import com.example.skillforge.dto.QuizRoundResponse;
 import com.example.skillforge.dto.UserSkillLevelResponse;
 import com.example.skillforge.entity.User;
 import com.example.skillforge.service.QuizService;
@@ -25,14 +27,31 @@ public class QuizController {
     private final UserService userService;
     private final SkillTrackingService skillTrackingService;
 
+    /**
+     * Submits a standard quiz attempt for scoring.
+     */
     @PostMapping("/quiz/submit")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<QuizSubmitResponse> submit(Authentication authentication,
-                                                     @Valid @RequestBody QuizSubmitRequest request) {
+            @Valid @RequestBody QuizSubmitRequest request) {
         User student = userService.getRequiredUserByEmail(authentication.getName());
         return ResponseEntity.ok(quizService.submitQuiz(student, request));
     }
 
+    /**
+     * Processes one round of the adaptive quiz flow.
+     */
+    @PostMapping("/quiz/round")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<QuizRoundResponse> processRound(Authentication authentication,
+            @Valid @RequestBody QuizRoundRequest request) {
+        User student = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.ok(quizService.processQuizRound(student, request));
+    }
+
+    /**
+     * Returns the authenticated learner's tracked concept mastery levels.
+     */
     @GetMapping("/skills/me")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<List<UserSkillLevelResponse>> mySkills(Authentication authentication) {

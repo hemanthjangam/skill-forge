@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/skillforge}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    show-sql: true
+  mail:
+    host: ${MAIL_HOST:smtp.example.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:developer@example.com}
+    password: ${MAIL_APP_PASSWORD:dummy-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  bootstrap:
+    admin:
+      enabled: ${ADMIN_BOOTSTRAP_ENABLED:true}
+      name: ${ADMIN_NAME:System Admin}
+      email: ${ADMIN_EMAIL:admin@example.com}
+      password: ${ADMIN_PASSWORD:change-me}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:U2tpbGxGb3JnZURldkR1bW15U2VjcmV0S2VlcFRoaXNSZXBsYWNlZEFuZFNlY3VyZQ==}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}

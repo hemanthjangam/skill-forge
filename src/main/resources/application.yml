@@ -1,25 +1,24 @@
 spring:
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: ""
-
+  application:
+    name: skill-forge
+  profiles:
+    active: ${APP_PROFILE:dev}
+  config:
+    import: optional:file:.env[.properties]
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
+  flyway:
+    enabled: true
 
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-
-security:
-  jwt:
-    secret: QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5eg==
-    expiration-ms: 86400000
+app:
+  ai:
+    gemini:
+      base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-2.5-flash}
+      timeout-ms: ${GEMINI_TIMEOUT_MS:30000}
