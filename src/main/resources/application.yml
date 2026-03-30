@@ -17,8 +17,15 @@ spring:
 
 app:
   ai:
+    provider: ${AI_PROVIDER:gemini}
     gemini:
       base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
       api-key: ${GEMINI_API_KEY:}
       model: ${GEMINI_MODEL:gemini-2.5-flash}
       timeout-ms: ${GEMINI_TIMEOUT_MS:30000}
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      model: ${OLLAMA_MODEL:qwen2.5:14b}
+      tutor-model: ${OLLAMA_TUTOR_MODEL:qwen2.5:7b}
+      generation-model: ${OLLAMA_GENERATION_MODEL:${OLLAMA_MODEL:qwen2.5:14b}}
+      timeout-ms: ${OLLAMA_TIMEOUT_MS:240000}

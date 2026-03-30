@@ -12,6 +12,7 @@ public interface LessonProgressRepository extends JpaRepository<LessonProgress, 
     
     boolean existsByStudentIdAndLessonId(Long studentId, Long lessonId);
     void deleteByLessonIn(List<Lesson> lessons);
+    long countByStudentIdAndLessonModuleCourseId(Long studentId, Long courseId);
 
     @Query("SELECT lp.lesson.id FROM LessonProgress lp WHERE lp.student.id = :studentId AND lp.lesson.module.course.id = :courseId")
     List<Long> findCompletedLessonIdsByStudentAndCourse(@Param("studentId") Long studentId, @Param("courseId") Long courseId);

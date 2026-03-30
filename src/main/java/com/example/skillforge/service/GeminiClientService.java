@@ -45,9 +45,9 @@ public class GeminiClientService {
         try {
             String requestBody = objectMapper.writeValueAsString(buildRequestBody(systemInstruction, messages));
             HttpRequest request = HttpRequest.newBuilder(buildGenerateUri())
-                    .timeout(Duration.ofMillis(aiProperties.getTimeoutMs()))
+                    .timeout(Duration.ofMillis(aiProperties.getGemini().getTimeoutMs()))
                     .header("Content-Type", "application/json")
-                    .header("x-goog-api-key", aiProperties.getApiKey())
+                    .header("x-goog-api-key", aiProperties.getGemini().getApiKey())
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
@@ -102,7 +102,7 @@ public class GeminiClientService {
      * Validates that the Gemini API key was configured before runtime calls are attempted.
      */
     private void ensureConfigured() {
-        String apiKey = aiProperties.getApiKey();
+        String apiKey = aiProperties.getGemini().getApiKey();
         if (apiKey == null || apiKey.isBlank() || apiKey.contains("YOUR_GEMINI_API_KEY")) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "Gemini API key is not configured");
         }
@@ -112,10 +112,10 @@ public class GeminiClientService {
      * Builds the Gemini generateContent endpoint URI from the configured model.
      */
     private URI buildGenerateUri() {
-        String baseUrl = aiProperties.getBaseUrl().endsWith("/")
-                ? aiProperties.getBaseUrl().substring(0, aiProperties.getBaseUrl().length() - 1)
-                : aiProperties.getBaseUrl();
-        return URI.create(baseUrl + "/v1beta/models/" + aiProperties.getModel() + ":generateContent");
+        String baseUrl = aiProperties.getGemini().getBaseUrl().endsWith("/")
+                ? aiProperties.getGemini().getBaseUrl().substring(0, aiProperties.getGemini().getBaseUrl().length() - 1)
+                : aiProperties.getGemini().getBaseUrl();
+        return URI.create(baseUrl + "/v1beta/models/" + aiProperties.getGemini().getModel() + ":generateContent");
     }
 
     /**

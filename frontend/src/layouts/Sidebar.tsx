@@ -13,6 +13,7 @@ import {
   Sparkles,
   Rocket,
   ShieldCheck,
+  FileQuestion,
 } from "lucide-react"
 
 export function getNavLinks(role?: string | null) {
@@ -21,22 +22,27 @@ export function getNavLinks(role?: string | null) {
   ]
 
   if (role === 'STUDENT') {
-    return [
-      ...defaultLinks,
-      { name: "My Courses", href: "/student/courses", icon: BookOpen },
-      { name: "Skill Mastery", href: "/student/skills", icon: Award },
-      { name: "Leaderboard", href: "/student/leaderboard", icon: BarChart },
-    ]
+      return [
+        ...defaultLinks,
+        { name: "My Courses", href: "/student/courses", icon: BookOpen },
+        { name: "Skill Mastery", href: "/student/skills", icon: Award },
+        { name: "Support Hub", href: "/student/support", icon: FileQuestion },
+        { name: "Leaderboard", href: "/student/leaderboard", icon: BarChart },
+      ]
   }
 
   if (role === 'TRAINER') {
-    return defaultLinks
+    return [
+      ...defaultLinks,
+      { name: "Assessments", href: "/trainer/assessments", icon: BookOpenCheck },
+    ]
   }
 
   if (role === 'ADMIN') {
     return [
       ...defaultLinks,
       { name: "Course Approvals", href: "/admin/courses", icon: BookOpenCheck },
+      { name: "Support Desk", href: "/admin/support", icon: FileQuestion },
       { name: "User Management", href: "/admin/users", icon: Users },
     ]
   }

@@ -20,11 +20,16 @@ import { QuizSession } from './pages/student/QuizSession'
 import { QuizResult } from './pages/student/QuizResult'
 import { Leaderboard } from './pages/student/Leaderboard'
 import { SkillMastery } from './pages/student/SkillMastery'
+import { SupportHub } from './pages/student/SupportHub'
+import { ExamSession } from './pages/student/ExamSession'
+import { ExamReview } from './pages/student/ExamReview'
 import { TrainerDashboard } from './pages/trainer/Dashboard'
 import { CourseBuilder } from './pages/trainer/CourseBuilder'
+import { TrainerAssessments } from './pages/trainer/Assessments'
 import { AdminDashboard } from './pages/admin/Dashboard'
 import { UserManagement } from './pages/admin/UserManagement'
 import { CourseModeration } from './pages/admin/CourseModeration'
+import { SupportDesk } from './pages/admin/SupportDesk'
 import { Profile } from './pages/shared/Profile'
 
 const queryClient = new QueryClient()
@@ -83,6 +88,9 @@ function App() {
               <Route path="/student/courses/:courseId/quiz/:quizId" element={<QuizSession />} />
               <Route path="/student/quiz/:quizId/result" element={<QuizResult />} />
               <Route path="/student/skills" element={<SkillMastery />} />
+              <Route path="/student/support" element={<SupportHub />} />
+              <Route path="/student/exams/:examId" element={<ExamSession />} />
+              <Route path="/student/exams/attempts/:attemptId/review" element={<ExamReview />} />
               <Route path="/student/leaderboard" element={<Leaderboard />} />
 
               {/* Trainer Routes */}
@@ -90,11 +98,13 @@ function App() {
               <Route path="/trainer/courses" element={<TrainerDashboard />} />
               <Route path="/trainer/courses/new" element={<CourseBuilder />} />
               <Route path="/trainer/courses/:courseId/edit" element={<CourseBuilder />} />
+              <Route path="/trainer/assessments" element={<TrainerAssessments />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/users" element={<UserManagement />} />
               <Route path="/admin/courses" element={<CourseModeration />} />
+              <Route path="/admin/support" element={<SupportDesk />} />
               <Route path="/admin/courses/:courseId/review" element={<CoursePlayer />} />
             </Route>
 

@@ -11,6 +11,7 @@ import java.util.List;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
     Page<Course> findByApprovalStatus(CourseApprovalStatus status, Pageable pageable);
+    List<Course> findByApprovalStatusOrderByCreatedAtDesc(CourseApprovalStatus status);
     Page<Course> findByCreatedBy(User trainer, Pageable pageable);
     List<Course> findByCreatedByOrderByCreatedAtDesc(User trainer);
     long countByCreatedBy(User trainer);

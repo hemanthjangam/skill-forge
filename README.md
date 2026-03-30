@@ -67,3 +67,15 @@ npm run dev
 ```
 
 Open `http://localhost:5173`.
+
+## Local AI Provider
+
+SkillForge now supports both hosted Gemini and local Ollama-backed inference through the same backend AI abstraction.
+
+Example local run:
+
+```bash
+AI_PROVIDER=ollama OLLAMA_MODEL=qwen2.5:14b ./mvnw spring-boot:run
+```
+
+Detailed setup notes are in [`docs/LOCAL_AI_SETUP.md`](./docs/LOCAL_AI_SETUP.md).

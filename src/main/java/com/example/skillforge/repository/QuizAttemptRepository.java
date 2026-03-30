@@ -16,6 +16,7 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
     Page<QuizAttempt> findByStudent(User student, Pageable pageable);
     Page<QuizAttempt> findByStudentAndModuleOrderByAttemptedAtDesc(User student, LearningModule module, Pageable pageable);
     boolean existsByStudentAndAttemptedAtAfter(User student, LocalDateTime attemptedAt);
+    long countByStudentAndScorePercentageGreaterThanEqual(User student, double minScore);
     long countByStudent(User student);
     void deleteByModuleIn(List<LearningModule> modules);
 
@@ -23,6 +24,13 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
 
     @Query("select coalesce(avg(q.scorePercentage), 0) from QuizAttempt q where q.student = :student")
     Double averageScoreByStudent(User student);
+
+    @Query("""
+            select case when count(q) > 0 then true else false end
+            from QuizAttempt q
+            where q.student = :student and (hour(q.attemptedAt) >= 22 or hour(q.attemptedAt) < 5)
+            """)
+    boolean hasNightOwlAttempt(@Param("student") User student);
 
     @Query("""
             select function('date', q.attemptedAt), count(q), coalesce(avg(q.scorePercentage), 0)

@@ -34,6 +34,7 @@ public class QuizService {
     private final SkillTrackingService skillTrackingService;
     private final LeaderboardService leaderboardService;
     private final NotificationService notificationService;
+    private final StudentSupportService studentSupportService;
 
     /**
      * Persists a standard module quiz attempt and updates skill, streak, and notification state.
@@ -165,6 +166,7 @@ public class QuizService {
 
         notificationService.createNotification(student,
                 "Quiz completed for module '" + module.getTitle() + "' with score " + score + "%");
+        studentSupportService.synchronizeStudentArtifacts(student);
 
         return QuizSubmitResponse.builder()
                 .attemptId(attempt.getId())

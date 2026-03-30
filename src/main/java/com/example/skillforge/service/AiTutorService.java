@@ -35,6 +35,9 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class AiTutorService {
+    private static final int MAX_CONTEXT_CHARS = 5000;
+    private static final int MAX_HISTORY_MESSAGES = 6;
+    private static final int MAX_HISTORY_MESSAGE_CHARS = 500;
 
     private final CourseService courseService;
     private final EnrollmentRepository enrollmentRepository;
@@ -43,7 +46,7 @@ public class AiTutorService {
     private final QuestionRepository questionRepository;
     private final SkillRepository skillRepository;
     private final UserSkillLevelRepository userSkillLevelRepository;
-    private final GeminiClientService geminiClientService;
+    private final AiGenerationService aiGenerationService;
 
     /**
      * Generates a structured concept lesson grounded in the student's selected course context.
@@ -78,7 +81,7 @@ public class AiTutorService {
                 context.skillScore() == null ? "unknown" : String.format(Locale.US, "%.1f", context.skillScore()),
                 context.contextBlock());
 
-        return geminiClientService.generateStructuredJson(systemInstruction, List.of(toUserMessage(userPrompt)), AiTutorTeachResponse.class);
+        return aiGenerationService.generateStructuredJson(systemInstruction, List.of(toUserMessage(userPrompt)), AiTutorTeachResponse.class, AiTaskProfile.TUTOR);
     }
 
     /**
@@ -105,13 +108,21 @@ public class AiTutorService {
                 context.concept(),
                 context.skillScore() == null ? "unknown" : String.format(Locale.US, "%.1f", context.skillScore()))));
         if (request.getHistory() != null) {
-            messages.addAll(request.getHistory().stream()
+            List<AiChatMessageRequest> trimmedHistory = request.getHistory().stream()
                     .filter(item -> item.getContent() != null && !item.getContent().isBlank())
-                    .toList());
+                    .skip(Math.max(0, request.getHistory().size() - MAX_HISTORY_MESSAGES))
+                    .map(item -> {
+                        AiChatMessageRequest trimmed = new AiChatMessageRequest();
+                        trimmed.setRole(item.getRole());
+                        trimmed.setContent(limitText(item.getContent(), MAX_HISTORY_MESSAGE_CHARS));
+                        return trimmed;
+                    })
+                    .toList();
+            messages.addAll(trimmedHistory);
         }
         messages.add(toUserMessage(request.getQuestion().trim()));
 
-        return geminiClientService.generateStructuredJson(systemInstruction, messages, AiTutorDoubtResponse.class);
+        return aiGenerationService.generateStructuredJson(systemInstruction, messages, AiTutorDoubtResponse.class, AiTaskProfile.TUTOR);
     }
 
     /**
@@ -147,7 +158,7 @@ public class AiTutorService {
                 context.contextBlock(),
                 request.getReflection().trim());
 
-        return geminiClientService.generateStructuredJson(systemInstruction, List.of(toUserMessage(userPrompt)), AiTutorFeedbackResponse.class);
+        return aiGenerationService.generateStructuredJson(systemInstruction, List.of(toUserMessage(userPrompt)), AiTutorFeedbackResponse.class, AiTaskProfile.TUTOR);
     }
 
     /**
@@ -177,7 +188,7 @@ public class AiTutorService {
                 %s
                 """.formatted(buildCompletedCoursePrompt(completedCourses));
 
-        return geminiClientService.generateStructuredJson(systemInstruction, List.of(toUserMessage(userPrompt)), AiMockGenerateResponse.class);
+        return aiGenerationService.generateStructuredJson(systemInstruction, List.of(toUserMessage(userPrompt)), AiMockGenerateResponse.class, AiTaskProfile.GENERATION);
     }
 
     /**
@@ -268,7 +279,7 @@ public class AiTutorService {
             }
         }
 
-        return builder.toString().trim();
+        return limitText(builder.toString().trim(), MAX_CONTEXT_CHARS);
     }
 
     /**
@@ -367,6 +378,17 @@ public class AiTutorService {
         message.setRole("user");
         message.setContent(content);
         return message;
+    }
+
+    private String limitText(String value, int maxChars) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.length() <= maxChars) {
+            return normalized;
+        }
+        return normalized.substring(0, maxChars) + "\n[truncated for local AI context limits]";
     }
 
     /**
