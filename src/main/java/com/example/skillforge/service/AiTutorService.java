@@ -35,9 +35,9 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class AiTutorService {
-    private static final int MAX_CONTEXT_CHARS = 5000;
-    private static final int MAX_HISTORY_MESSAGES = 6;
-    private static final int MAX_HISTORY_MESSAGE_CHARS = 500;
+    private static final int MAX_CONTEXT_CHARS = 2500;
+    private static final int MAX_HISTORY_MESSAGES = 4;
+    private static final int MAX_HISTORY_MESSAGE_CHARS = 250;
 
     private final CourseService courseService;
     private final EnrollmentRepository enrollmentRepository;
@@ -59,7 +59,7 @@ public class AiTutorService {
                 Keep the tone professional, concrete, and practical for software learners.
                 Return strict JSON with keys:
                 concept, courseTitle, moduleTitle, summary, intuition, projectApplication, practiceSteps, commonMistakes, quickChecks, nextStep.
-                Use arrays for practiceSteps, commonMistakes, and quickChecks.
+                Use arrays for projectApplication, practiceSteps, commonMistakes, and quickChecks.
                 """;
 
         String userPrompt = """
@@ -73,7 +73,7 @@ public class AiTutorService {
 
                 Requirements:
                 - Keep the explanation tied to the supplied course/module context.
-                - Mention one realistic project use case.
+                - Include 1 to 3 realistic project use cases in projectApplication.
                 - Make the quick checks short and answerable.
                 - Keep all output concise and learner-friendly.
                 """.formatted(
@@ -172,17 +172,20 @@ public class AiTutorService {
 
         String systemInstruction = """
                 You are Skill Forge's AI mock designer.
-                Generate project-oriented mocks only from the provided completed-course context.
+                Generate project-oriented mock scenarios only from the provided completed-course context.
                 Return strict JSON with key mocks.
-                Each mock item must contain: courseId, courseTitle, focusConcepts, prompts, evaluationFocus.
-                focusConcepts and prompts must be arrays.
-                Prompts must feel interview-ready and implementation-oriented.
+                Each mock item must contain:
+                courseId, courseTitle, scenarioTitle, scenarioBrief, learnerGoal, deliverable, focusConcepts, taskChecklist, constraints, evaluationFocus.
+                focusConcepts, taskChecklist, constraints, and evaluationFocus must be arrays.
+                Use concise, implementation-oriented language.
+                Do not label items as "Prompt 1", "Prompt 2", or similar.
                 """;
 
         String userPrompt = """
                 Create one mock scenario per completed course below.
-                Limit prompts to 4 per course.
-                Keep prompts concrete, professional, and project-heavy.
+                Limit taskChecklist to 4 items per course.
+                Keep the mock realistic, professional, and project-heavy.
+                The output should read like a scenario brief a student can act on immediately.
 
                 Completed courses:
                 %s

@@ -6,7 +6,7 @@ import { MetricCard } from "../../components/shared/MetricCard"
 import { StreakHeatmap } from "../../components/shared/StreakHeatmap"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
 import { Skeleton } from "../../components/ui/skeleton"
-import { BookOpen, Flame, Star, Target, CheckSquare, Bell, TrendingUp, CalendarDays, Trophy } from "lucide-react"
+import { BookOpen, Flame, Star, Target, CheckSquare, Bell, CalendarDays, Trophy } from "lucide-react"
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 export function StudentDashboard() {
@@ -31,18 +31,18 @@ export function StudentDashboard() {
 
     const activeDays = activity.filter(item => item.knowledgeChecks > 0).length
     const currentWeekChecks = activity
-      .filter(item => new Date(item.date) >= weekAgo)
+      .filter(item => parseDateKey(item.date) >= weekAgo)
       .reduce((sum, item) => sum + item.knowledgeChecks, 0)
 
     const recentTrend = activity.slice(-8).map((item) => ({
-      label: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      label: parseDateKey(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       checks: item.knowledgeChecks,
       score: Math.round(item.averageScore),
     }))
 
     const weeklyMap = new Map<string, { week: string; checks: number }>()
     activity.forEach((item) => {
-      const date = new Date(item.date)
+      const date = parseDateKey(item.date)
       const weekStart = new Date(date)
       weekStart.setDate(date.getDate() - ((date.getDay() + 6) % 7))
       const key = `${weekStart.getFullYear()}-${weekStart.getMonth()}-${weekStart.getDate()}`
@@ -113,45 +113,34 @@ export function StudentDashboard() {
   return (
     <div className="flex-1 space-y-8">
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
-        <div className="relative flex h-full min-h-[340px] overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-7 text-white shadow-[0_28px_90px_-38px_rgba(15,23,42,0.75)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.35),transparent_35%)]" />
-          <div className="relative flex w-full flex-col justify-between gap-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.22em] text-white/75">
-              <TrendingUp className="h-3.5 w-3.5" />
-              Premium Learning Workspace
-            </div>
+        <div className="rounded-[2rem] border border-border/70 bg-card/95 p-8 shadow-[0_22px_60px_-36px_rgba(15,23,42,0.24)]">
+          <div className="flex h-full w-full flex-col justify-between gap-8">
             <div className="space-y-5">
               <div>
-                <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Welcome back, {user?.name || 'Student'}.</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/72">
-                  Keep your streak alive, push your quiz accuracy higher, and turn daily practice into measurable momentum.
+                <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Student dashboard</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-[2.8rem] md:leading-[1.06]">
+                  Welcome back, {user?.name || 'Student'}.
+                </h2>
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  Track your learning consistency, quiz performance, and weekly study rhythm in one place.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
-                  <p className="text-xs uppercase tracking-[0.22em] text-white/60">Current streak</p>
-                  <p className="mt-2 text-2xl font-semibold">{data?.currentStreak ?? 0} days</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
-                  <p className="text-xs uppercase tracking-[0.22em] text-white/60">Best streak</p>
-                  <p className="mt-2 text-2xl font-semibold">{data?.bestStreak ?? 0} days</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
-                  <p className="text-xs uppercase tracking-[0.22em] text-white/60">Active days</p>
-                  <p className="mt-2 text-2xl font-semibold">{analytics.activeDays}</p>
-                </div>
+                <SummaryStat label="Current streak" value={`${data?.currentStreak ?? 0} days`} tone="orange" />
+                <SummaryStat label="Best streak" value={`${data?.bestStreak ?? 0} days`} tone="sky" />
+                <SummaryStat label="Active days" value={String(analytics.activeDays)} tone="emerald" />
               </div>
             </div>
           </div>
         </div>
 
-        <Card className="h-full min-h-[340px] overflow-hidden border-white/10 bg-card/90 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.25)]">
+        <Card className="h-full min-h-[340px] overflow-hidden rounded-[2rem] border-white/10 bg-card/90 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.25)]">
           <CardHeader className="border-b border-border/60">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Flame className="h-5 w-5 text-orange-500" />
               Streak Summary
             </CardTitle>
-            <CardDescription>Daily consistency, similar to contribution tracking on coding platforms.</CardDescription>
+            <CardDescription>Daily study consistency across the last six months.</CardDescription>
           </CardHeader>
           <CardContent className="flex h-full flex-col space-y-5 pt-6">
             {isLoading ? (
@@ -159,20 +148,20 @@ export function StudentDashboard() {
             ) : (
               <>
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-muted/50 p-4">
+                  <div className="rounded-[1.35rem] border border-border/70 bg-muted/35 p-4">
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">This week</p>
                     <p className="mt-2 text-2xl font-semibold">{analytics.currentWeekChecks}</p>
                   </div>
-                  <div className="rounded-2xl bg-muted/50 p-4">
+                  <div className="rounded-[1.35rem] border border-border/70 bg-muted/35 p-4">
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Checks</p>
                     <p className="mt-2 text-2xl font-semibold">{data?.knowledgeChecksCompleted ?? 0}</p>
                   </div>
-                  <div className="rounded-2xl bg-muted/50 p-4">
+                  <div className="rounded-[1.35rem] border border-border/70 bg-muted/35 p-4">
                     <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Points</p>
                     <p className="mt-2 text-2xl font-semibold">{data?.totalPoints ?? 0}</p>
                   </div>
                 </div>
-                <div className="flex-1 rounded-2xl border border-border/70 bg-background/70 p-4">
+                <div className="flex-1 rounded-[1.6rem] border border-border/70 bg-background/70 p-4">
                   <StreakHeatmap data={activity.map((item) => ({ date: item.date, count: item.knowledgeChecks }))} />
                 </div>
               </>
@@ -184,17 +173,25 @@ export function StudentDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-2xl font-semibold tracking-tight">Performance Overview</h3>
-          <p className="text-muted-foreground">A cleaner summary of your study rhythm, completion pattern, and quiz accuracy.</p>
+          <p className="text-muted-foreground">Your recent learning consistency, quiz accuracy, and weekly practice volume.</p>
         </div>
       </div>
 
       {renderMetrics()}
 
       <div className="grid gap-4 lg:grid-cols-7">
-        <Card className="col-span-4 overflow-hidden border-white/10 bg-card/90 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.24)]">
+        <Card className="col-span-4 overflow-hidden rounded-[1.8rem] border-white/10 bg-card/90 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.24)]">
           <CardHeader className="border-b border-border/60">
-            <CardTitle>Accuracy Trend</CardTitle>
-            <CardDescription>Recent knowledge checks and average score movement.</CardDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>Accuracy Trend</CardTitle>
+                <CardDescription>Average score across your most recent knowledge checks.</CardDescription>
+              </div>
+              <div className="rounded-[1rem] border border-border/70 bg-background/70 px-3 py-2 text-right">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Latest score</p>
+                <p className="mt-1 text-lg font-semibold">{analytics.recentTrend.at(-1)?.score ?? 0}%</p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="h-[290px] pt-6">
             {activityQuery.isLoading ? (
@@ -215,7 +212,7 @@ export function StudentDashboard() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                   <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis tickLine={false} axisLine={false} fontSize={12} domain={[0, 100]} />
-                  <Tooltip />
+                  <Tooltip content={<ChartTooltip suffix="%" label="Avg score" />} />
                   <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" fill="url(#scoreFill)" strokeWidth={2.5} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -223,10 +220,18 @@ export function StudentDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 overflow-hidden border-white/10 bg-card/90 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.24)]">
+        <Card className="col-span-3 overflow-hidden rounded-[1.8rem] border-white/10 bg-card/90 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.24)]">
           <CardHeader className="border-b border-border/60">
-            <CardTitle>Weekly Output</CardTitle>
-            <CardDescription>How consistently you are showing up each week.</CardDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>Weekly Output</CardTitle>
+                <CardDescription>Total knowledge checks completed each week.</CardDescription>
+              </div>
+              <div className="rounded-[1rem] border border-border/70 bg-background/70 px-3 py-2 text-right">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Current week</p>
+                <p className="mt-1 text-lg font-semibold">{analytics.currentWeekChecks}</p>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="h-[290px] pt-6">
             {activityQuery.isLoading ? (
@@ -241,7 +246,7 @@ export function StudentDashboard() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                   <XAxis dataKey="week" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis tickLine={false} axisLine={false} fontSize={12} />
-                  <Tooltip />
+                  <Tooltip content={<ChartTooltip label="Knowledge checks" />} />
                   <Bar dataKey="checks" radius={[8, 8, 0, 0]} fill="hsl(var(--chart-2))" />
                 </BarChart>
               </ResponsiveContainer>
@@ -251,7 +256,7 @@ export function StudentDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-white/10 bg-card/90">
+        <Card className="rounded-[1.6rem] border-white/10 bg-card/90">
           <CardContent className="flex items-center gap-4 py-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <CheckSquare className="h-5 w-5" />
@@ -262,7 +267,7 @@ export function StudentDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-white/10 bg-card/90">
+        <Card className="rounded-[1.6rem] border-white/10 bg-card/90">
           <CardContent className="flex items-center gap-4 py-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500">
               <CalendarDays className="h-5 w-5" />
@@ -273,7 +278,7 @@ export function StudentDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-white/10 bg-card/90">
+        <Card className="rounded-[1.6rem] border-white/10 bg-card/90">
           <CardContent className="flex items-center gap-4 py-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
               <Trophy className="h-5 w-5" />
@@ -284,7 +289,7 @@ export function StudentDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-white/10 bg-card/90">
+        <Card className="rounded-[1.6rem] border-white/10 bg-card/90">
           <CardContent className="flex items-center gap-4 py-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-500">
               <Bell className="h-5 w-5" />
@@ -296,6 +301,45 @@ export function StudentDashboard() {
           </CardContent>
         </Card>
       </div>
+    </div>
+  )
+}
+
+function parseDateKey(value: string) {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, (month ?? 1) - 1, day ?? 1)
+}
+
+function SummaryStat({ label, value, tone }: { label: string; value: string; tone: "orange" | "sky" | "emerald" }) {
+  const tones = {
+    orange: "border-orange-500/15 bg-orange-500/[0.05]",
+    sky: "border-sky-500/15 bg-sky-500/[0.05]",
+    emerald: "border-emerald-500/15 bg-emerald-500/[0.05]",
+  }
+
+  return (
+    <div className={`rounded-[1.4rem] border p-4 ${tones[tone]}`}>
+      <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+    </div>
+  )
+}
+
+function ChartTooltip({ active, payload, label, suffix }: { active?: boolean; payload?: Array<{ value?: number | string; payload?: { label?: string; week?: string } }>; label: string; suffix?: string }) {
+  if (!active || !payload || payload.length === 0) {
+    return null
+  }
+
+  const point = payload[0]
+  const raw = point?.value
+  const title = point?.payload?.label || point?.payload?.week || ""
+
+  return (
+    <div className="rounded-[1rem] border border-border/70 bg-background/95 px-3 py-2 shadow-xl">
+      <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{title}</p>
+      <p className="mt-1 text-sm font-medium text-foreground">
+        {label}: {raw}{suffix ?? ""}
+      </p>
     </div>
   )
 }

@@ -209,8 +209,23 @@ export const courseApi = {
     return response.data;
   },
 
+  updateCourse: async (courseId: number, title: string, description: string): Promise<CourseResponse> => {
+    const response = await api.put(`/courses/${courseId}`, { title, description });
+    return response.data;
+  },
+
+  updateModule: async (moduleId: number, title: string): Promise<ModuleResponse> => {
+    const response = await api.put(`/modules/${moduleId}`, { title });
+    return response.data;
+  },
+
   addLesson: async (moduleId: number, payload: LessonCreatePayload): Promise<LessonResponse> => {
     const response = await api.post(`/modules/${moduleId}/lessons`, payload);
+    return response.data;
+  },
+
+  updateLesson: async (lessonId: number, payload: LessonCreatePayload): Promise<LessonResponse> => {
+    const response = await api.put(`/lessons/${lessonId}`, payload);
     return response.data;
   },
 
@@ -221,6 +236,11 @@ export const courseApi = {
 
   addQuestion: async (moduleId: number, payload: QuestionCreatePayload): Promise<QuestionPoolItem> => {
     const response = await api.post(`/modules/${moduleId}/questions`, payload);
+    return response.data;
+  },
+
+  updateQuestion: async (questionId: number, payload: QuestionCreatePayload): Promise<QuestionPoolItem> => {
+    const response = await api.put(`/questions/${questionId}`, payload);
     return response.data;
   },
 

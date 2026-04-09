@@ -105,6 +105,7 @@ function App() {
               <Route path="/admin/users" element={<UserManagement />} />
               <Route path="/admin/courses" element={<CourseModeration />} />
               <Route path="/admin/support" element={<SupportDesk />} />
+              <Route path="/admin/courses/:courseId/edit" element={<CourseBuilder />} />
               <Route path="/admin/courses/:courseId/review" element={<CoursePlayer />} />
             </Route>
 

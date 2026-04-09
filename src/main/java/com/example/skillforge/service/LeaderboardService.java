@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +43,7 @@ public class LeaderboardService {
         LeaderboardEntry entry = getOrCreateEntry(user);
 
         LocalDate lastActiveDate = entry.getLastActiveDate();
-        int currentStreak = entry.getCurrentStreak() == null ? 0 : entry.getCurrentStreak();
+        int currentStreak = normalizeCurrentStreak(entry, today);
         if (lastActiveDate == null) {
             currentStreak = 1;
         } else if (lastActiveDate.isEqual(today.minusDays(1))) {
@@ -62,11 +64,12 @@ public class LeaderboardService {
      */
     public StreakSummaryResponse getStreakSummary(User user) {
         LeaderboardEntry entry = getOrCreateEntry(user);
+        int effectiveCurrentStreak = normalizeCurrentStreak(entry, LocalDate.now());
 
         return StreakSummaryResponse.builder()
                 .userId(user.getId())
                 .userName(user.getName())
-                .currentStreak(entry.getCurrentStreak() == null ? 0 : entry.getCurrentStreak())
+                .currentStreak(effectiveCurrentStreak)
                 .bestStreak(entry.getBestStreak() == null ? 0 : entry.getBestStreak())
                 .totalKnowledgeChecks(entry.getTotalKnowledgeChecks() == null ? 0 : entry.getTotalKnowledgeChecks())
                 .points(entry.getPoints() == null ? 0 : entry.getPoints())
@@ -93,15 +96,27 @@ public class LeaderboardService {
      * Returns the streak leaderboard ordered by current streak, best streak, and points.
      */
     public PagedResponse<StreakBoardEntryResponse> getStreakBoard(int page, int size) {
-        Page<LeaderboardEntry> result = leaderboardEntryRepository
-                .findAllByOrderByCurrentStreakDescBestStreakDescPointsDesc(PageRequest.of(page, size));
+        LocalDate today = LocalDate.now();
+        List<LeaderboardEntry> sortedEntries = leaderboardEntryRepository.findAll().stream()
+                .sorted(Comparator
+                        .comparingInt((LeaderboardEntry entry) -> normalizeCurrentStreak(entry, today)).reversed()
+                        .thenComparing((LeaderboardEntry entry) -> safeInt(entry.getBestStreak()), Comparator.reverseOrder())
+                        .thenComparing((LeaderboardEntry entry) -> safeInt(entry.getPoints()), Comparator.reverseOrder())
+                        .thenComparing(entry -> entry.getUser().getName(), String.CASE_INSENSITIVE_ORDER))
+                .toList();
+
+        int totalElements = sortedEntries.size();
+        int fromIndex = Math.min(page * size, totalElements);
+        int toIndex = Math.min(fromIndex + size, totalElements);
+        List<LeaderboardEntry> pageEntries = sortedEntries.subList(fromIndex, toIndex);
         int rankStart = page * size + 1;
+
         return PagedResponse.<StreakBoardEntryResponse>builder()
-                .content(buildStreakPage(result, rankStart))
-                .page(result.getNumber())
-                .size(result.getSize())
-                .totalElements(result.getTotalElements())
-                .totalPages(result.getTotalPages())
+                .content(buildStreakPage(pageEntries, rankStart, today))
+                .page(page)
+                .size(size)
+                .totalElements(totalElements)
+                .totalPages(totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size))
                 .build();
     }
 
@@ -140,8 +155,7 @@ public class LeaderboardService {
     /**
      * Maps streak leaderboard entries to API DTOs while preserving stable ranks.
      */
-    private java.util.List<StreakBoardEntryResponse> buildStreakPage(Page<LeaderboardEntry> result, int rankStart) {
-        java.util.List<LeaderboardEntry> entries = result.getContent();
+    private java.util.List<StreakBoardEntryResponse> buildStreakPage(List<LeaderboardEntry> entries, int rankStart, LocalDate today) {
         java.util.List<StreakBoardEntryResponse> responses = new java.util.ArrayList<>(entries.size());
         for (int index = 0; index < entries.size(); index++) {
             LeaderboardEntry entry = entries.get(index);
@@ -149,12 +163,27 @@ public class LeaderboardService {
                     .rank(rankStart + index)
                     .userId(entry.getUser().getId())
                     .userName(entry.getUser().getName())
-                    .currentStreak(entry.getCurrentStreak() == null ? 0 : entry.getCurrentStreak())
+                    .currentStreak(normalizeCurrentStreak(entry, today))
                     .bestStreak(entry.getBestStreak() == null ? 0 : entry.getBestStreak())
                     .totalKnowledgeChecks(entry.getTotalKnowledgeChecks() == null ? 0 : entry.getTotalKnowledgeChecks())
                     .points(entry.getPoints() == null ? 0 : entry.getPoints())
                     .build());
         }
         return responses;
+    }
+
+    private int normalizeCurrentStreak(LeaderboardEntry entry, LocalDate today) {
+        LocalDate lastActiveDate = entry.getLastActiveDate();
+        if (lastActiveDate == null) {
+            return 0;
+        }
+        if (lastActiveDate.isBefore(today.minusDays(1))) {
+            return 0;
+        }
+        return safeInt(entry.getCurrentStreak());
+    }
+
+    private int safeInt(Integer value) {
+        return value == null ? 0 : value;
     }
 }

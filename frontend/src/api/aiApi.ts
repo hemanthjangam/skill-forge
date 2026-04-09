@@ -17,7 +17,7 @@ export interface AiTeachResponse {
   moduleTitle?: string
   summary: string
   intuition: string
-  projectApplication: string
+  projectApplication: string[]
   practiceSteps: string[]
   commonMistakes: string[]
   quickChecks: string[]
@@ -54,9 +54,14 @@ export interface AiMockGenerateRequest {
 export interface AiMockScenario {
   courseId: number
   courseTitle: string
+  scenarioTitle: string
+  scenarioBrief: string
+  learnerGoal: string
+  deliverable: string
   focusConcepts: string[]
-  prompts: string[]
-  evaluationFocus: string
+  taskChecklist: string[]
+  constraints: string[]
+  evaluationFocus: string[]
 }
 
 export interface AiMockGenerateResponse {

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpTimeoutException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -22,9 +23,15 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OllamaClientService {
+    private static final String JSON_ONLY_INSTRUCTION = """
+            Return valid JSON only.
+            Do not include markdown fences, commentary, explanations, or any text before or after the JSON.
+            If a field expects an array, always return a JSON array.
+            """;
 
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
+    private final AiResponseNormalizer aiResponseNormalizer;
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     public <T> T generateStructuredJson(String systemInstruction,
@@ -38,12 +45,17 @@ public class OllamaClientService {
             }
             String extracted = extractJsonPayload(content);
             try {
-                return objectMapper.readValue(extracted, responseType);
+                return aiResponseNormalizer.normalizeAndConvert(objectMapper.readTree(extracted), responseType);
             } catch (IOException firstFailure) {
                 log.warn("Initial Ollama JSON parse failed. Attempting repair. Payload: {}", abbreviate(extracted));
                 String repaired = repairJsonPayload(resolveModel(taskProfile), extracted);
-                return objectMapper.readValue(repaired, responseType);
+                return aiResponseNormalizer.normalizeAndConvert(objectMapper.readTree(repaired), responseType);
             }
+        } catch (HttpTimeoutException e) {
+            log.warn("Local AI request timed out after {} ms for model {}",
+                    aiProperties.getOllama().getTimeoutMs(),
+                    resolveModel(taskProfile));
+            throw new ApiException(HttpStatus.GATEWAY_TIMEOUT, "Local AI request timed out");
         } catch (IOException e) {
             log.warn("Failed to deserialize Ollama response as structured JSON", e);
             throw new ApiException(HttpStatus.BAD_GATEWAY, "Local AI provider returned invalid JSON");
@@ -85,18 +97,25 @@ public class OllamaClientService {
         root.put("stream", false);
         root.put("format", "json");
         var options = root.putObject("options");
-        options.put("temperature", 0.3);
+        options.put("temperature", 0.1);
 
         var payloadMessages = root.putArray("messages");
         payloadMessages.addObject()
                 .put("role", "system")
-                .put("content", systemInstruction);
+                .put("content", buildStrictSystemInstruction(systemInstruction));
         for (AiChatMessageRequest message : messages) {
             payloadMessages.addObject()
                     .put("role", "assistant".equalsIgnoreCase(message.getRole()) ? "assistant" : "user")
                     .put("content", message.getContent());
         }
         return root;
+    }
+
+    private String buildStrictSystemInstruction(String systemInstruction) {
+        if (systemInstruction == null || systemInstruction.isBlank()) {
+            return JSON_ONLY_INSTRUCTION.trim();
+        }
+        return JSON_ONLY_INSTRUCTION + "\n" + systemInstruction.trim();
     }
 
     private String sanitizeJson(String value) {

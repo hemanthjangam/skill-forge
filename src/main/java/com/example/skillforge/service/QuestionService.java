@@ -33,17 +33,13 @@ public class QuestionService {
      */
     public QuestionResponse addQuestion(User trainer, Long moduleId, QuestionCreateRequest request) {
         LearningModule module = courseService.getModule(moduleId);
-        if (!module.getCourse().getCreatedBy().getId().equals(trainer.getId())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Only course owner can add questions");
-        }
+        ensureQuestionEditor(trainer, module);
 
         long total = questionRepository.countByModule(module);
         if (total >= 50) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Maximum 50 questions allowed per module");
         }
-        if (!request.getOptions().contains(request.getCorrectAnswer())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Correct answer must be one of the options");
-        }
+        validateQuestionRequest(request);
 
         Question question = questionRepository.save(Question.builder()
                 .module(module)
@@ -54,6 +50,34 @@ public class QuestionService {
                 .options(request.getOptions())
                 .correctAnswer(request.getCorrectAnswer())
                 .build());
+
+        return QuestionResponse.builder()
+                .id(question.getId())
+                .statement(question.getStatement())
+                .topic(question.getTopic())
+                .concept(question.getConcept())
+                .difficulty(question.getDifficulty())
+                .options(question.getOptions())
+                .build();
+    }
+
+    /**
+     * Updates an existing question while preserving module ownership checks.
+     */
+    @Transactional
+    public QuestionResponse updateQuestion(User actor, Long questionId, QuestionCreateRequest request) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Question not found"));
+        ensureQuestionEditor(actor, question.getModule());
+        validateQuestionRequest(request);
+
+        question.setStatement(request.getStatement().trim());
+        question.setTopic(request.getTopic().trim());
+        question.setConcept(request.getConcept().trim());
+        question.setDifficulty(request.getDifficulty());
+        question.setOptions(request.getOptions());
+        question.setCorrectAnswer(request.getCorrectAnswer());
+        question = questionRepository.save(question);
 
         return QuestionResponse.builder()
                 .id(question.getId())
@@ -141,9 +165,7 @@ public class QuestionService {
     @Transactional(readOnly = true)
     public List<QuestionPoolItemResponse> getModuleQuestionPool(User trainer, Long moduleId) {
         LearningModule module = courseService.getModule(moduleId);
-        if (!module.getCourse().getCreatedBy().getId().equals(trainer.getId())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Only course owner can access question pool");
-        }
+        ensureQuestionEditor(trainer, module);
 
         return questionRepository.findByModuleOrderByIdAsc(module).stream()
                 .map(q -> QuestionPoolItemResponse.builder()
@@ -239,5 +261,21 @@ public class QuestionService {
                 .concept(question.getConcept())
                 .options(question.getOptions())
                 .build();
+    }
+
+    private void ensureQuestionEditor(User actor, LearningModule module) {
+        Course course = module.getCourse();
+        if (actor.getRole() == Role.ADMIN) {
+            return;
+        }
+        if (actor.getRole() != Role.TRAINER || !course.getCreatedBy().getId().equals(actor.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Only the owner or an admin can edit module questions");
+        }
+    }
+
+    private void validateQuestionRequest(QuestionCreateRequest request) {
+        if (!request.getOptions().contains(request.getCorrectAnswer())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Correct answer must be one of the options");
+        }
     }
 }

@@ -7,7 +7,7 @@ import { Button } from "../../components/ui/button"
 import { Badge } from "../../components/ui/badge"
 import { Skeleton } from "../../components/ui/skeleton"
 import { Link } from "react-router-dom"
-import { CheckCircle, XCircle, Loader2, Eye } from "lucide-react"
+import { CheckCircle, XCircle, Loader2, Eye, PencilLine } from "lucide-react"
 
 export function CourseModeration() {
   const queryClient = useQueryClient()
@@ -116,6 +116,12 @@ export function CourseModeration() {
                             <Link to={`/admin/courses/${course.id}/review`}>
                               <Eye className="w-4 h-4 mr-1" />
                               Review
+                            </Link>
+                          </Button>
+                          <Button asChild variant="outline" size="sm">
+                            <Link to={`/admin/courses/${course.id}/edit`}>
+                              <PencilLine className="w-4 h-4 mr-1" />
+                              Edit
                             </Link>
                           </Button>
                           <Button

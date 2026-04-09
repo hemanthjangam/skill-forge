@@ -38,24 +38,60 @@ public class CourseController {
      * Adds a module to an owned course.
      */
     @PostMapping("/courses/{courseId}/modules")
-    @PreAuthorize("hasRole('TRAINER')")
+    @PreAuthorize("hasAnyRole('TRAINER','ADMIN')")
     public ResponseEntity<ModuleResponse> addModule(Authentication authentication,
             @PathVariable Long courseId,
             @Valid @RequestBody ModuleCreateRequest request) {
-        User trainer = userService.getRequiredUserByEmail(authentication.getName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(courseService.addModule(trainer, courseId, request));
+        User actor = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(courseService.addModule(actor, courseId, request));
     }
 
     /**
      * Adds a lesson to an owned module.
      */
     @PostMapping("/modules/{moduleId}/lessons")
-    @PreAuthorize("hasRole('TRAINER')")
+    @PreAuthorize("hasAnyRole('TRAINER','ADMIN')")
     public ResponseEntity<LessonResponse> addLesson(Authentication authentication,
             @PathVariable Long moduleId,
             @Valid @RequestBody LessonCreateRequest request) {
-        User trainer = userService.getRequiredUserByEmail(authentication.getName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(courseService.addLesson(trainer, moduleId, request));
+        User actor = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(courseService.addLesson(actor, moduleId, request));
+    }
+
+    /**
+     * Updates course title and description for the owner or an admin reviewer.
+     */
+    @PutMapping("/courses/{courseId}")
+    @PreAuthorize("hasAnyRole('TRAINER','ADMIN')")
+    public ResponseEntity<CourseResponse> updateCourse(Authentication authentication,
+            @PathVariable Long courseId,
+            @Valid @RequestBody CourseCreateRequest request) {
+        User actor = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.ok(courseService.updateCourse(actor, courseId, request));
+    }
+
+    /**
+     * Updates module details for the owner or an admin reviewer.
+     */
+    @PutMapping("/modules/{moduleId}")
+    @PreAuthorize("hasAnyRole('TRAINER','ADMIN')")
+    public ResponseEntity<ModuleResponse> updateModule(Authentication authentication,
+            @PathVariable Long moduleId,
+            @Valid @RequestBody ModuleCreateRequest request) {
+        User actor = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.ok(courseService.updateModule(actor, moduleId, request));
+    }
+
+    /**
+     * Updates lesson content for the owner or an admin reviewer.
+     */
+    @PutMapping("/lessons/{lessonId}")
+    @PreAuthorize("hasAnyRole('TRAINER','ADMIN')")
+    public ResponseEntity<LessonResponse> updateLesson(Authentication authentication,
+            @PathVariable Long lessonId,
+            @Valid @RequestBody LessonCreateRequest request) {
+        User actor = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.ok(courseService.updateLesson(actor, lessonId, request));
     }
 
     /**

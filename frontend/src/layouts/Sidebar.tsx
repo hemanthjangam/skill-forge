@@ -55,17 +55,17 @@ export function Sidebar() {
   const { isSidebarCollapsed } = useUiStore()
   const location = useLocation()
   const links = getNavLinks(role)
-  const roleTone = role === "ADMIN" ? "Platform Control" : role === "TRAINER" ? "Creator Studio" : "Skill Track"
+  const roleTone = role === "ADMIN" ? "Admin Workspace" : role === "TRAINER" ? "Trainer Workspace" : "Student Workspace"
   const roleSummary = role === "ADMIN"
-    ? "Moderate courses, users, and platform quality."
+    ? "Courses, users, and platform quality."
     : role === "TRAINER"
-      ? "Build stronger courses and manage publishing."
-      : "Keep your streak, mastery, and projects moving."
+      ? "Course design and assessment flow."
+      : "Courses, practice, and progress."
   const roleIcon = role === "ADMIN" ? ShieldCheck : role === "TRAINER" ? Rocket : Sparkles
   const RoleIcon = roleIcon
 
   return (
-    <aside className={`fixed hidden h-screen border-r border-sidebar-border/70 bg-sidebar/92 text-sidebar-foreground backdrop-blur-2xl transition-[width] duration-300 md:block ${isSidebarCollapsed ? 'w-24' : 'w-64'}`}>
+    <aside className={`fixed hidden h-screen border-r border-sidebar-border/70 bg-sidebar/96 text-sidebar-foreground backdrop-blur-xl transition-[width] duration-300 md:block ${isSidebarCollapsed ? 'w-24' : 'w-64'}`}>
       <div className="flex h-full max-h-screen flex-col gap-4 px-4 py-5">
         <div className="border-b border-sidebar-border/70 px-1 pb-5">
           <Link to="/" className={`flex items-center font-semibold ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
@@ -74,12 +74,12 @@ export function Sidebar() {
             </div>
             <div className={cn("transition-opacity duration-200", isSidebarCollapsed && "hidden")}>
               <p className="text-sm font-semibold tracking-tight text-sidebar-foreground">SkillForge</p>
-              <p className="text-xs text-sidebar-foreground/60">Learning workspace</p>
+              <p className="text-xs text-sidebar-foreground/60">Learning platform</p>
             </div>
           </Link>
         </div>
 
-        <div className="rounded-[1.6rem] border border-white/10 bg-gradient-to-br from-white/8 via-white/5 to-white/0 px-4 py-4 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.55)]">
+        <div className="rounded-[1.45rem] border border-white/8 bg-white/[0.04] px-4 py-4">
           <div className={`flex ${isSidebarCollapsed ? 'justify-center' : 'items-start gap-3'}`}>
             <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
               <RoleIcon className="h-4 w-4 text-sidebar-primary" />
@@ -128,12 +128,6 @@ export function Sidebar() {
               )
             })}
           </nav>
-        </div>
-        <div className={cn("rounded-[1.4rem] border border-white/10 bg-white/6 px-4 py-4", isSidebarCollapsed && "hidden")}>
-          <p className="text-[11px] uppercase tracking-[0.24em] text-sidebar-foreground/50">Focus mode</p>
-          <p className="mt-2 text-sm leading-6 text-sidebar-foreground/70">
-            Cleaner surfaces, stronger hierarchy, and less visual noise across the app.
-          </p>
         </div>
       </div>
     </aside>

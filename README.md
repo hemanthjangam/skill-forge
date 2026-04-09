@@ -420,6 +420,14 @@ Start the backend with Ollama:
 AI_PROVIDER=ollama OLLAMA_MODEL=qwen2.5:14b ./mvnw spring-boot:run
 ```
 
+If Ollama stores models on an external drive, start it with:
+
+```bash
+OLLAMA_MODELS=/Volumes/Bunny/ollama-models ollama serve
+```
+
+Use the models root directory, not the nested `blobs` path.
+
 Detailed local AI notes are in [`docs/LOCAL_AI_SETUP.md`](/Volumes/Bunny/Resume/Projects/skill-forge/docs/LOCAL_AI_SETUP.md).
 
 ## Default admin

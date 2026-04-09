@@ -49,9 +49,7 @@ public class CourseService {
     @Transactional
     public ModuleResponse addModule(User trainer, Long courseId, ModuleCreateRequest request) {
         Course course = getCourse(courseId);
-        if (!course.getCreatedBy().getId().equals(trainer.getId())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Only course owner can add modules");
-        }
+        ensureCourseEditor(trainer, course);
 
         LearningModule module = learningModuleRepository.save(LearningModule.builder()
                 .title(request.getTitle())
@@ -71,9 +69,7 @@ public class CourseService {
     @Transactional
     public LessonResponse addLesson(User trainer, Long moduleId, LessonCreateRequest request) {
         LearningModule module = getModule(moduleId);
-        if (!module.getCourse().getCreatedBy().getId().equals(trainer.getId())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Only course owner can add lessons");
-        }
+        ensureCourseEditor(trainer, module.getCourse());
         validateLessonContent(request);
 
         Lesson lesson = lessonRepository.save(Lesson.builder()
@@ -93,6 +89,63 @@ public class CourseService {
                 .imageUrl(lesson.getImageUrl())
                 .videoUrl(lesson.getVideoUrl())
                 .moduleId(module.getId())
+                .build();
+    }
+
+    /**
+     * Updates editable course details for the owner or an admin reviewer.
+     */
+    @Transactional
+    public CourseResponse updateCourse(User actor, Long courseId, CourseCreateRequest request) {
+        Course course = getCourse(courseId);
+        ensureCourseEditor(actor, course);
+        course.setTitle(request.getTitle().trim());
+        course.setDescription(request.getDescription());
+        return toDto(courseRepository.save(course));
+    }
+
+    /**
+     * Updates an existing module title for the owner or an admin reviewer.
+     */
+    @Transactional
+    public ModuleResponse updateModule(User actor, Long moduleId, ModuleCreateRequest request) {
+        LearningModule module = getModule(moduleId);
+        ensureCourseEditor(actor, module.getCourse());
+        module.setTitle(request.getTitle().trim());
+        module = learningModuleRepository.save(module);
+
+        return ModuleResponse.builder()
+                .id(module.getId())
+                .title(module.getTitle())
+                .courseId(module.getCourse().getId())
+                .build();
+    }
+
+    /**
+     * Updates lesson content after re-validating the payload contract.
+     */
+    @Transactional
+    public LessonResponse updateLesson(User actor, Long lessonId, LessonCreateRequest request) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Lesson not found"));
+        ensureCourseEditor(actor, lesson.getModule().getCourse());
+        validateLessonContent(request);
+
+        lesson.setTitle(request.getTitle().trim());
+        lesson.setContentType(request.getContentType());
+        lesson.setTextContent(request.getTextContent());
+        lesson.setImageUrl(request.getImageUrl());
+        lesson.setVideoUrl(request.getVideoUrl());
+        lesson = lessonRepository.save(lesson);
+
+        return LessonResponse.builder()
+                .id(lesson.getId())
+                .title(lesson.getTitle())
+                .contentType(lesson.getContentType())
+                .textContent(lesson.getTextContent())
+                .imageUrl(lesson.getImageUrl())
+                .videoUrl(lesson.getVideoUrl())
+                .moduleId(lesson.getModule().getId())
                 .build();
     }
 
@@ -342,6 +395,19 @@ public class CourseService {
         }
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Trainer account is not active");
+        }
+    }
+
+    /**
+     * Allows course edits by the owning trainer or an admin reviewer.
+     */
+    private void ensureCourseEditor(User actor, Course course) {
+        if (actor.getRole() == Role.ADMIN) {
+            return;
+        }
+        ensureTrainer(actor);
+        if (!course.getCreatedBy().getId().equals(actor.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Only course owner can edit this course");
         }
     }
 

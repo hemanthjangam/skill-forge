@@ -29,12 +29,12 @@ public class QuestionController {
      * Adds a question to a module's trainer-managed question pool.
      */
     @PostMapping("/modules/{moduleId}/questions")
-    @PreAuthorize("hasRole('TRAINER')")
+    @PreAuthorize("hasAnyRole('TRAINER','ADMIN')")
     public ResponseEntity<QuestionResponse> addQuestion(Authentication authentication,
             @PathVariable Long moduleId,
             @Valid @RequestBody QuestionCreateRequest request) {
-        User trainer = userService.getRequiredUserByEmail(authentication.getName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(questionService.addQuestion(trainer, moduleId, request));
+        User actor = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(questionService.addQuestion(actor, moduleId, request));
     }
 
     /**
@@ -63,10 +63,22 @@ public class QuestionController {
      * Returns the complete trainer-visible question pool for a module.
      */
     @GetMapping("/modules/{moduleId}/questions")
-    @PreAuthorize("hasRole('TRAINER')")
+    @PreAuthorize("hasAnyRole('TRAINER','ADMIN')")
     public ResponseEntity<List<QuestionPoolItemResponse>> questionPool(Authentication authentication,
             @PathVariable Long moduleId) {
-        User trainer = userService.getRequiredUserByEmail(authentication.getName());
-        return ResponseEntity.ok(questionService.getModuleQuestionPool(trainer, moduleId));
+        User actor = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.ok(questionService.getModuleQuestionPool(actor, moduleId));
+    }
+
+    /**
+     * Updates a question in the module pool for the owner or an admin reviewer.
+     */
+    @PutMapping("/questions/{questionId}")
+    @PreAuthorize("hasAnyRole('TRAINER','ADMIN')")
+    public ResponseEntity<QuestionResponse> updateQuestion(Authentication authentication,
+            @PathVariable Long questionId,
+            @Valid @RequestBody QuestionCreateRequest request) {
+        User actor = userService.getRequiredUserByEmail(authentication.getName());
+        return ResponseEntity.ok(questionService.updateQuestion(actor, questionId, request));
     }
 }

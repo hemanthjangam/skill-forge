@@ -32,6 +32,7 @@ public class GeminiClientService {
 
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
+    private final AiResponseNormalizer aiResponseNormalizer;
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     /**
@@ -64,7 +65,7 @@ public class GeminiClientService {
             }
 
             String sanitizedJson = sanitizeJson(responseText);
-            return objectMapper.readValue(sanitizedJson, responseType);
+            return aiResponseNormalizer.normalizeAndConvert(objectMapper.readTree(sanitizedJson), responseType);
         } catch (IOException e) {
             log.error("Failed to parse Gemini response", e);
             throw new ApiException(HttpStatus.BAD_GATEWAY, "AI provider returned an invalid response");

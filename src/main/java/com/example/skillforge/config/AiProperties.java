@@ -31,7 +31,7 @@ public class AiProperties {
     public static class Ollama {
         private String baseUrl = "http://localhost:11434";
         private String model = "qwen2.5:14b";
-        private String tutorModel = "qwen2.5:7b";
+        private String tutorModel = "qwen2.5:14b";
         private String generationModel = "qwen2.5:14b";
         private int timeoutMs = 120000;
     }

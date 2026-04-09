@@ -11,7 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../../components/ui/textarea"
 import { Skeleton } from "../../components/ui/skeleton"
 import { deriveRecommendedConcept } from "../../lib/aiTutor"
-import { BookOpen, Bot, BrainCircuit, CheckCircle2, ChevronRight, ClipboardList, MessageSquare, Sparkles, Trophy, WandSparkles } from "lucide-react"
+import { BookOpen, Bot, ChevronRight, ClipboardList, MessageSquare, Sparkles, Target, Trophy, WandSparkles } from "lucide-react"
+
+type TutorThreadMessage =
+  | { role: 'user'; content: string }
+  | { role: 'assistant'; content: string; keyPoints: string[]; followUpPrompt?: string }
 
 export function SkillMastery() {
   const skillsQuery = useQuery({
@@ -51,7 +55,7 @@ export function SkillMastery() {
   const [selectedModuleId, setSelectedModuleId] = useState<string>("all")
   const [doubtInput, setDoubtInput] = useState("")
   const [reflection, setReflection] = useState("")
-  const [tutorMessages, setTutorMessages] = useState<AiChatMessage[]>([])
+  const [tutorMessages, setTutorMessages] = useState<TutorThreadMessage[]>([])
   const [activeMockCourseId, setActiveMockCourseId] = useState<number | null>(null)
   const [tutorRequestKey, setTutorRequestKey] = useState(0)
   const [mockRequestKey, setMockRequestKey] = useState(0)
@@ -129,7 +133,14 @@ export function SkillMastery() {
       courseId: selectedCourse ? selectedCourse.courseId : undefined,
       moduleId: selectedModuleId !== 'all' ? Number(selectedModuleId) : undefined,
       question: doubtInput.trim(),
-      history: tutorMessages,
+      history: tutorMessages.map((message) => ({
+        role: message.role,
+        content: message.role === 'assistant'
+          ? [message.content, message.keyPoints?.length ? `Key points: ${message.keyPoints.join(' | ')}` : '', message.followUpPrompt ? `Next: ${message.followUpPrompt}` : '']
+              .filter(Boolean)
+              .join('\n\n')
+          : message.content,
+      })) as AiChatMessage[],
     }),
     onSuccess: (response) => {
       setTutorMessages((current) => [
@@ -137,9 +148,9 @@ export function SkillMastery() {
         { role: 'user', content: doubtInput.trim() },
         {
           role: 'assistant',
-          content: [response.answer, response.keyPoints.length > 0 ? `Key points: ${response.keyPoints.join(' | ')}` : '', response.followUpPrompt ? `Next: ${response.followUpPrompt}` : '']
-            .filter(Boolean)
-            .join('\n\n'),
+          content: response.answer,
+          keyPoints: response.keyPoints,
+          followUpPrompt: response.followUpPrompt,
         },
       ])
       setDoubtInput("")
@@ -200,12 +211,18 @@ export function SkillMastery() {
     return [
       { title: 'Summary', body: teachQuery.data.summary },
       { title: 'Intuition', body: teachQuery.data.intuition },
-      { title: 'Project application', body: teachQuery.data.projectApplication },
       { title: 'Next step', body: teachQuery.data.nextStep },
     ]
   }, [teachQuery.data])
 
   const feedback = feedbackMutation.data
+  const suggestedQuestions = useMemo(() => {
+    return [
+      `Give me a real project example for ${selectedConcept}.`,
+      `What is the most common mistake in ${selectedConcept}?`,
+      `How do I explain ${selectedConcept} in an interview?`,
+    ]
+  }, [selectedConcept])
 
   const teachError = getErrorMessage(teachQuery.error)
   const doubtError = getErrorMessage(doubtMutation.error)
@@ -213,47 +230,51 @@ export function SkillMastery() {
   const mocksError = getErrorMessage(mocksQuery.error)
 
   return (
-    <div className="flex-1 space-y-8">
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-indigo-950 via-slate-950 to-slate-900 p-7 text-white shadow-[0_28px_90px_-38px_rgba(15,23,42,0.75)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(129,140,248,0.35),transparent_32%)]" />
-          <div className="relative space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.22em] text-white/75">
-              <BrainCircuit className="h-3.5 w-3.5" />
-              AI Skill Studio
+    <div className="mx-auto flex-1 max-w-[1480px] space-y-10 px-1">
+      <div className="grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+        <div className="rounded-[2.15rem] border border-border/70 bg-card/95 p-8 shadow-[0_22px_60px_-36px_rgba(15,23,42,0.24)]">
+          <div className="space-y-7">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-3xl">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Student workspace</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-[2.8rem] md:leading-[1.06]">
+                  Sharpen weak concepts, ask better questions, and practice with realistic mock scenarios.
+                </h2>
+                <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground md:text-[15px]">
+                  Use Skill Mastery to focus on the concepts that need work, generate structured lesson briefs, and rehearse with scenario-based mock exercises tied to courses you have completed.
+                </p>
+              </div>
+              <div className="rounded-[1.4rem] border border-border/70 bg-background/70 px-4 py-3 text-sm">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Recommended focus</p>
+                <p className="mt-2 font-semibold capitalize text-foreground">{recommendedConcept}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">Skill Mastery and guided concept practice.</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/72">
-                Review your live concept scores, launch a Gemini-backed tutor session for weak areas, and generate premium mock drills from courses you have already finished.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <HeroStat label="Average skill score" value={`${totalSkillScore}%`} />
-              <HeroStat label="Mastered concepts" value={String(masteryBuckets.mastered)} />
-              <HeroStat label="Current streak" value={`${streakQuery.data?.currentStreak ?? 0} days`} />
+            <div className="grid gap-3 md:grid-cols-3">
+              <HeroStat label="Average skill score" value={`${totalSkillScore}%`} accent="sky" />
+              <HeroStat label="Mastered concepts" value={String(masteryBuckets.mastered)} accent="emerald" />
+              <HeroStat label="Current streak" value={`${streakQuery.data?.currentStreak ?? 0} days`} accent="amber" />
             </div>
           </div>
         </div>
 
-        <Card className="overflow-hidden border-white/10 bg-card/95 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.24)]">
-          <CardHeader className="border-b border-border/60">
+        <Card className="h-full overflow-hidden rounded-[2rem] border-white/10 bg-card/95 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.24)]">
+          <CardHeader className="border-b border-border/60 pb-5">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Sparkles className="h-5 w-5 text-primary" />
               Focus Recommendation
             </CardTitle>
             <CardDescription>Generated from your weakest tracked concept and current learning rhythm.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-5 pt-6">
+          <CardContent className="space-y-6 pt-6">
             {skillsQuery.isLoading ? (
               <Skeleton className="h-40 rounded-2xl" />
             ) : (
               <>
-                <div className="rounded-2xl border border-primary/15 bg-primary/5 p-5">
-                  <p className="text-xs uppercase tracking-[0.22em] text-primary/80">Recommended next concept</p>
-                  <p className="mt-3 text-2xl font-semibold tracking-tight">{recommendedConcept}</p>
+                <div className="rounded-[1.75rem] border border-primary/15 bg-[linear-gradient(180deg,rgba(59,130,246,0.07),rgba(59,130,246,0.02))] p-6">
+                  <p className="text-xs uppercase tracking-[0.24em] text-primary/80">Recommended next concept</p>
+                  <p className="mt-3 text-2xl font-semibold tracking-tight md:text-[2rem]">{recommendedConcept}</p>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    Spend one focused practice block here before moving to harder concepts. The tutor will emphasize explanation clarity, examples, and trade-offs.
+                    Spend one focused practice block here before moving to harder concepts. The tutor now returns a lesson brief, project applications, and execution steps instead of generic AI text.
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -267,8 +288,8 @@ export function SkillMastery() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-        <Card className="border-white/10 bg-card/95">
+      <div className="grid items-start gap-6 xl:grid-cols-[0.84fr_1.16fr]">
+        <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-[0_22px_60px_-36px_rgba(15,23,42,0.28)] xl:sticky xl:top-24">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-emerald-500" />
@@ -292,7 +313,7 @@ export function SkillMastery() {
                   <button
                     key={skill.skill}
                     onClick={() => setSelectedConcept(skill.skill)}
-                    className={`block w-full rounded-2xl border p-4 text-left transition-all hover:border-primary/40 hover:bg-primary/5 ${selectedConcept === skill.skill ? 'border-primary/40 bg-primary/5' : 'border-border/70'}`}
+                    className={`block w-full rounded-[1.5rem] border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/[0.045] ${selectedConcept === skill.skill ? 'border-primary/35 bg-primary/[0.05] shadow-[0_16px_34px_-26px_rgba(37,99,235,0.45)]' : 'border-border/70 bg-background/65'}`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -315,16 +336,25 @@ export function SkillMastery() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="border-white/10 bg-card/95">
+          <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-[0_22px_60px_-36px_rgba(15,23,42,0.24)]">
             <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" />
-              AI Tutor
-            </CardTitle>
-            <CardDescription>Select a concept, ground it in course context, ask doubts, and get structured feedback.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-              <div className="flex flex-wrap gap-2">
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                AI Tutor
+              </CardTitle>
+              <CardDescription>Select a concept, ground it in course context, ask doubts, and get structured coaching instead of raw AI output.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              <div className="space-y-5 rounded-[1.75rem] border border-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))] p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Tutor focus</p>
+                    <p className="text-xs text-muted-foreground">Choose what you want the lesson and follow-up coaching to optimize for.</p>
+                  </div>
+                  <Badge variant="outline">Context aware</Badge>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
                 {conceptOptions.map((concept) => (
                   <Button
                     key={concept}
@@ -336,54 +366,55 @@ export function SkillMastery() {
                     {concept}
                   </Button>
                 ))}
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Course context</p>
+                    <Select value={selectedCourseId || "none"} onValueChange={(value) => setSelectedCourseId(value === "none" ? "" : value)}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Choose a course context" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">General concept tutoring</SelectItem>
+                        {tutorContextCourses.map((course) => (
+                          <SelectItem key={course.courseId} value={String(course.courseId)}>
+                            {course.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Module focus</p>
+                    <Select
+                      value={selectedModuleId}
+                      onValueChange={setSelectedModuleId}
+                      disabled={!selectedCourse}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Choose a module focus" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Entire course</SelectItem>
+                        {selectedCourse?.modules.map((module) => (
+                          <SelectItem key={module.id} value={String(module.id)}>
+                            {module.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Course context</p>
-                  <Select value={selectedCourseId || "none"} onValueChange={(value) => setSelectedCourseId(value === "none" ? "" : value)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a course context" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">General concept tutoring</SelectItem>
-                      {tutorContextCourses.map((course) => (
-                        <SelectItem key={course.courseId} value={String(course.courseId)}>
-                          {course.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Module focus</p>
-                  <Select
-                    value={selectedModuleId}
-                    onValueChange={setSelectedModuleId}
-                    disabled={!selectedCourse}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a module focus" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Entire course</SelectItem>
-                      {selectedCourse?.modules.map((module) => (
-                        <SelectItem key={module.id} value={String(module.id)}>
-                          {module.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/60 px-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-border/70 bg-background/60 px-5 py-4">
                 <div>
                   <p className="text-sm font-medium">Generate AI teaching response</p>
                   <p className="text-xs text-muted-foreground">Create a focused teaching breakdown for the concept and context you selected.</p>
                 </div>
                 <Button onClick={handleGenerateLesson} disabled={teachQuery.isFetching || !selectedConcept}>
-                  {teachQuery.isFetching ? 'Generating...' : 'Generate lesson'}
+                  {teachQuery.isFetching ? 'Generating...' : 'Build lesson brief'}
                 </Button>
               </div>
 
@@ -394,9 +425,9 @@ export function SkillMastery() {
               ) : teachError ? (
                 <InlineError message={teachError} />
               ) : (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 lg:grid-cols-3">
                   {tutorSections.map((item) => (
-                    <div key={item.title} className="rounded-2xl border border-border/70 bg-background/70 p-4">
+                    <div key={item.title} className="rounded-[1.5rem] border border-border/70 bg-background/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                       <p className="text-xs uppercase tracking-[0.22em] text-primary/80">{item.title}</p>
                       <p className="mt-3 text-sm leading-6 text-muted-foreground">{item.body}</p>
                     </div>
@@ -405,17 +436,31 @@ export function SkillMastery() {
               )}
 
               {teachQuery.data ? (
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <InfoListCard title="Project applications" items={teachQuery.data.projectApplication} />
                   <InfoListCard title="Practice steps" items={teachQuery.data.practiceSteps} />
                   <InfoListCard title="Common mistakes" items={teachQuery.data.commonMistakes} />
                   <InfoListCard title="Quick checks" items={teachQuery.data.quickChecks} />
                 </div>
               ) : null}
 
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+              <div className="rounded-[1.75rem] border border-border/70 bg-background/70 p-5">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-primary" />
                   <p className="font-medium">Ask a doubt</p>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {suggestedQuestions.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      onClick={() => setDoubtInput(question)}
+                      className="rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground"
+                    >
+                      {question}
+                    </button>
+                  ))}
                 </div>
                 <div className="mt-4 flex gap-3">
                   <Input
@@ -433,16 +478,35 @@ export function SkillMastery() {
                     <p className="text-sm text-muted-foreground">Start by asking for an example, a difference, a why-question, or help applying the concept to a project.</p>
                   ) : (
                     tutorMessages.slice(-6).map((message, index) => (
-                      <div key={`${message.role}-${index}`} className={`rounded-2xl px-4 py-3 text-sm leading-6 ${message.role === 'assistant' ? 'bg-primary/5 text-foreground' : 'bg-muted text-foreground'}`}>
-                        <p className="mb-1 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{message.role === 'assistant' ? 'Tutor' : 'You'}</p>
-                        <p>{message.content}</p>
-                      </div>
+                      message.role === 'assistant' ? (
+                        <div key={`${message.role}-${index}`} className="rounded-[1.5rem] border border-primary/15 bg-primary/5 px-4 py-4 text-sm leading-6">
+                          <p className="mb-2 text-[11px] uppercase tracking-[0.22em] text-primary/80">Tutor response</p>
+                          <p className="text-foreground">{message.content}</p>
+                          {message.keyPoints.length > 0 ? (
+                            <div className="mt-4">
+                              <p className="text-[11px] uppercase tracking-[0.22em] text-primary/80">Key points</p>
+                              <InfoList title="Key points" items={message.keyPoints} className="mt-3" />
+                            </div>
+                          ) : null}
+                          {message.followUpPrompt ? (
+                            <div className="mt-4 rounded-[1.25rem] border border-primary/10 bg-background/70 px-4 py-3">
+                              <p className="text-[11px] uppercase tracking-[0.22em] text-primary/80">Recommended next question</p>
+                              <p className="mt-2 text-foreground">{message.followUpPrompt}</p>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <div key={`${message.role}-${index}`} className="rounded-[1.25rem] bg-muted px-4 py-3 text-sm leading-6 text-foreground">
+                          <p className="mb-1 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">You</p>
+                          <p>{message.content}</p>
+                        </div>
+                      )
                     ))
                   )}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+              <div className="rounded-[1.75rem] border border-border/70 bg-background/70 p-5">
                 <div className="flex items-center gap-2">
                   <WandSparkles className="h-4 w-4 text-primary" />
                   <p className="font-medium">Reflection feedback</p>
@@ -461,7 +525,7 @@ export function SkillMastery() {
                 </div>
                 {feedbackError ? <InlineError className="mt-4" message={feedbackError} /> : null}
                 {feedback ? (
-                  <div className="mt-4 space-y-3 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-4 text-sm leading-6">
+                  <div className="mt-4 space-y-3 rounded-[1.5rem] border border-primary/15 bg-primary/5 px-4 py-4 text-sm leading-6">
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.22em] text-primary/80">Verdict</p>
                       <p className="mt-2">{feedback.verdict}</p>
@@ -479,22 +543,23 @@ export function SkillMastery() {
                   </div>
                 ) : null}
               </div>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="border-white/10 bg-card/95">
+          <Card className="rounded-[2rem] border-white/10 bg-card/95 shadow-[0_22px_60px_-36px_rgba(15,23,42,0.24)]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ClipboardList className="h-5 w-5 text-primary" />
                 Mock Practice from Finished Courses
               </CardTitle>
-              <CardDescription>Course-aware mock drills generated from modules you already completed.</CardDescription>
+              <CardDescription>Course-aware scenario briefs generated from modules you already completed.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-background/60 px-4 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-border/70 bg-background/60 px-5 py-4">
                 <div>
-                  <p className="text-sm font-medium">Generate AI mock set</p>
-                  <p className="text-xs text-muted-foreground">Create a fresh set of project-oriented mock prompts from your completed courses.</p>
+                  <p className="text-sm font-medium">Generate AI mock studio</p>
+                  <p className="text-xs text-muted-foreground">Create scenario briefs with tasks, constraints, and evaluation criteria from your completed courses.</p>
                 </div>
                 <Button onClick={handleGenerateMocks} disabled={completedCourses.length === 0 || mocksQuery.isFetching}>
                   {mocksQuery.isFetching ? 'Generating...' : 'Generate mocks'}
@@ -513,53 +578,76 @@ export function SkillMastery() {
                 />
               ) : (
                 <>
-                  <div className="grid gap-3">
+                  <div className="grid gap-4 xl:grid-cols-[0.42fr_0.58fr]">
+                    <div className="space-y-3 rounded-[1.75rem] border border-border/60 bg-background/45 p-3">
                     {mockScenarios.map((mock) => (
                       <button
                         key={mock.courseId}
                         onClick={() => setActiveMockCourseId(mock.courseId)}
-                        className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left transition-all hover:border-primary/40 hover:bg-primary/5 ${activeMock?.courseId === mock.courseId ? 'border-primary/40 bg-primary/5' : 'border-border/70'}`}
+                        className={`flex w-full items-center justify-between rounded-[1.35rem] border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-primary/[0.045] ${activeMock?.courseId === mock.courseId ? 'border-primary/35 bg-primary/[0.05] shadow-[0_16px_34px_-26px_rgba(37,99,235,0.42)]' : 'border-border/70 bg-background/80'}`}
                       >
                         <div>
-                          <p className="font-medium">{mock.courseTitle}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">{mock.prompts.length} targeted prompts generated from completed modules.</p>
+                          <p className="font-medium">{mock.scenarioTitle || mock.courseTitle}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">{mock.taskChecklist.length} execution steps for {mock.courseTitle}.</p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </button>
                     ))}
-                  </div>
+                    </div>
 
                   {activeMock ? (
-                    <div className="rounded-[1.5rem] border border-border/70 bg-background/70 p-5">
+                    <div className="rounded-[1.9rem] border border-border/70 bg-background/70 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs uppercase tracking-[0.22em] text-primary/80">Selected mock</p>
-                          <h3 className="mt-2 text-xl font-semibold">{activeMock.courseTitle}</h3>
+                          <p className="text-xs uppercase tracking-[0.22em] text-primary/80">Selected scenario</p>
+                          <h3 className="mt-2 text-xl font-semibold">{activeMock.scenarioTitle || activeMock.courseTitle}</h3>
+                          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{activeMock.scenarioBrief}</p>
                         </div>
-                        <Badge variant="outline">Project-based mock</Badge>
+                        <Badge variant="outline" className="rounded-full px-3 py-1">Scenario brief</Badge>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
                         {activeMock.focusConcepts.map((concept) => (
                           <Badge key={concept} variant="secondary">{concept}</Badge>
                         ))}
                       </div>
-                      <div className="mt-5 space-y-4">
-                        {activeMock.prompts.map((prompt, index) => (
-                          <div key={prompt} className="rounded-2xl border border-border/70 p-4">
-                            <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                              <CheckCircle2 className="h-4 w-4 text-primary" />
-                              Prompt {index + 1}
-                            </div>
-                            <p className="text-sm leading-6 text-muted-foreground">{prompt}</p>
+                      <div className="mt-5 grid gap-3 md:grid-cols-2">
+                        <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-4">
+                          <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                            <Target className="h-4 w-4 text-primary" />
+                            Learner goal
                           </div>
-                        ))}
+                          <p className="text-sm leading-6 text-muted-foreground">{activeMock.learnerGoal}</p>
+                        </div>
+                        <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-4">
+                          <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                            <ClipboardList className="h-4 w-4 text-primary" />
+                            Deliverable
+                          </div>
+                          <p className="text-sm leading-6 text-muted-foreground">{activeMock.deliverable}</p>
+                        </div>
                       </div>
-                      <div className="mt-4 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm leading-6">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-primary/80">Evaluation focus</p>
-                        <p className="mt-2">{activeMock.evaluationFocus}</p>
+                      <div className="mt-5 grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+                        <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-4">
+                          <p className="text-[11px] uppercase tracking-[0.22em] text-primary/80">Execution plan</p>
+                          <ol className="mt-3 space-y-3">
+                            {activeMock.taskChecklist.map((task, index) => (
+                              <li key={task} className="flex gap-3 text-sm leading-6 text-muted-foreground">
+                                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                                  {index + 1}
+                                </span>
+                                <span>{task}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                        <div className="space-y-4">
+                          <InfoListCard title="Evaluation focus" items={activeMock.evaluationFocus} />
+                          <InfoListCard title="Constraints" items={activeMock.constraints} />
+                        </div>
                       </div>
                     </div>
                   ) : null}
+                  </div>
                 </>
               )}
             </CardContent>
@@ -606,9 +694,15 @@ function InfoList({ title, items, className = "mt-3" }: { title: string; items: 
   )
 }
 
-function HeroStat({ label, value }: { label: string; value: string }) {
+function HeroStat({ label, value, accent }: { label: string; value: string; accent: "sky" | "emerald" | "amber" }) {
+  const accentClasses = {
+    sky: "border-sky-400/18 bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+    emerald: "border-emerald-400/18 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+    amber: "border-amber-300/18 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+  }
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
+    <div className={`rounded-[1.4rem] border p-4 backdrop-blur-sm ${accentClasses[accent]}`}>
       <p className="text-xs uppercase tracking-[0.22em] text-white/60">{label}</p>
       <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
@@ -617,12 +711,12 @@ function HeroStat({ label, value }: { label: string; value: string }) {
 
 function MiniBadge({ label, value, tone }: { label: string; value: number; tone: "emerald" | "sky" | "amber" }) {
   const classes = {
-    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    sky: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-    amber: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    emerald: "border border-emerald-500/15 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    sky: "border border-sky-500/15 bg-sky-500/10 text-sky-600 dark:text-sky-400",
+    amber: "border border-amber-500/15 bg-amber-500/10 text-amber-700 dark:text-amber-400",
   }
   return (
-    <div className={`rounded-2xl px-4 py-4 ${classes[tone]}`}>
+    <div className={`rounded-[1.35rem] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] ${classes[tone]}`}>
       <p className="text-xs uppercase tracking-[0.22em]">{label}</p>
       <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
@@ -631,7 +725,7 @@ function MiniBadge({ label, value, tone }: { label: string; value: number; tone:
 
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-8 text-center">
+    <div className="rounded-[1.6rem] border border-dashed border-border/70 bg-muted/20 p-8 text-center">
       <BookOpen className="mx-auto h-8 w-8 text-muted-foreground/60" />
       <p className="mt-4 font-medium">{title}</p>
       <p className="mt-2 text-sm text-muted-foreground">{description}</p>

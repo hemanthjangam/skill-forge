@@ -46,10 +46,10 @@ export function TopNav() {
 
   const notifications = notificationsQuery.data?.content ?? []
   const unreadCount = notifications.filter((item) => !item.read).length
-  const routeTitle = deriveRouteTitle(location.pathname, role)
+  const routeMeta = deriveRouteMeta(location.pathname, role)
 
   return (
-    <header className="sticky top-0 z-20 flex h-20 items-center gap-4 border-b border-white/10 bg-background/55 px-4 backdrop-blur-2xl lg:px-6">
+    <header className="sticky top-0 z-20 flex h-[76px] items-center gap-4 border-b border-border/60 bg-background/88 px-4 backdrop-blur-xl lg:px-6">
       <Sheet>
         <SheetTrigger asChild>
           <Button
@@ -82,31 +82,14 @@ export function TopNav() {
             variant="outline"
             size="icon"
             onClick={toggleSidebar}
-            className="hidden rounded-2xl border-white/20 bg-white/70 md:inline-flex dark:bg-white/5"
+            className="hidden rounded-2xl border-border/70 bg-background md:inline-flex"
           >
             <Menu className="h-5 w-5" />
             <span className="sr-only">{isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}</span>
           </Button>
-          <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">{role ?? 'workspace'}</p>
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">{role ?? 'workspace'}</p>
-            <p className="truncate text-lg font-semibold tracking-tight">{routeTitle}</p>
-          </div>
-        </div>
-
-        <div className="hidden items-center gap-3 lg:flex">
-          <div className="glass-panel flex min-w-[280px] items-center gap-3 rounded-[1.2rem] px-4 py-3 text-sm">
-            <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-primary">
-              Live
-            </span>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-foreground">
-                {user?.name ? `Welcome back, ${user.name}` : "Focused learning workspace"}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                Premium shell, adaptive practice, and course-aware AI tutoring.
-              </p>
-            </div>
+            <p className="text-[11px] uppercase tracking-[0.24em] text-muted-foreground">{routeMeta.section}</p>
+            <p className="truncate text-xl font-semibold tracking-tight">{routeMeta.title}</p>
           </div>
         </div>
       </div>
@@ -137,7 +120,7 @@ export function TopNav() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative rounded-2xl bg-white/55 dark:bg-white/5">
+            <Button variant="ghost" size="icon" className="relative rounded-2xl">
               <Bell className="h-5 w-5" />
               {unreadCount > 0 ? (
                 <span className="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white">
@@ -187,14 +170,14 @@ export function TopNav() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="secondary" className="h-11 rounded-2xl px-3">
+            <Button variant="secondary" className="h-11 rounded-2xl border border-border/70 bg-background px-3 shadow-none">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <User className="h-4 w-4" />
               </div>
               <div className="hidden text-left sm:block">
                 <p className="max-w-[120px] truncate text-sm font-semibold">{user?.name || "Account"}</p>
                 <p className="max-w-[120px] truncate text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  {role || "user"}
+                  {routeMeta.section}
                 </p>
               </div>
               <span className="sr-only">Toggle user menu</span>
@@ -227,18 +210,20 @@ export function TopNav() {
   )
 }
 
-function deriveRouteTitle(pathname: string, role?: string | null) {
-  if (pathname.includes("/student/skills")) return "AI Skill Mastery"
-  if (pathname.includes("/student/leaderboard")) return "Leaderboard and Streaks"
-  if (pathname.includes("/student/courses/") && pathname.includes("/player")) return "Course Player"
-  if (pathname.includes("/student/courses/")) return "Course Overview"
-  if (pathname.includes("/student/courses")) return "Course Discovery"
-  if (pathname.includes("/trainer/courses/new")) return "Course Builder"
-  if (pathname.includes("/trainer/courses")) return "Trainer Studio"
-  if (pathname.includes("/admin/users")) return "User Management"
-  if (pathname.includes("/admin/courses")) return "Course Moderation"
-  if (pathname.includes("/profile")) return "Profile Settings"
-  if (role === "ADMIN") return "Platform Control Center"
-  if (role === "TRAINER") return "Trainer Dashboard"
-  return "Learning Dashboard"
+function deriveRouteMeta(pathname: string, role?: string | null) {
+  const section = role === "ADMIN" ? "Admin" : role === "TRAINER" ? "Trainer" : "Student"
+
+  if (pathname.includes("/student/skills")) return { section, title: "Skill Mastery" }
+  if (pathname.includes("/student/leaderboard")) return { section, title: "Leaderboard" }
+  if (pathname.includes("/student/courses/") && pathname.includes("/player")) return { section, title: "Course Player" }
+  if (pathname.includes("/student/courses/")) return { section, title: "Course Overview" }
+  if (pathname.includes("/student/courses")) return { section, title: "Courses" }
+  if (pathname.includes("/trainer/courses/new")) return { section, title: "Course Builder" }
+  if (pathname.includes("/trainer/courses")) return { section, title: "Trainer Studio" }
+  if (pathname.includes("/admin/users")) return { section, title: "User Management" }
+  if (pathname.includes("/admin/courses")) return { section, title: "Course Moderation" }
+  if (pathname.includes("/profile")) return { section, title: "Profile" }
+  if (role === "ADMIN") return { section, title: "Dashboard" }
+  if (role === "TRAINER") return { section, title: "Dashboard" }
+  return { section, title: "Dashboard" }
 }

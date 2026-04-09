@@ -33,25 +33,33 @@ For this project, the practical target is `qwen2.5:14b` on a machine with a capa
 ## Setup steps
 
 1. Install Ollama.
-2. Pull the model you want:
+2. If your Ollama models live outside the default location, start Ollama with your custom models root:
+
+```bash
+OLLAMA_MODELS=/Volumes/Bunny/ollama-models ollama serve
+```
+
+Use the parent directory such as `/Volumes/Bunny/ollama-models`, not the internal `blobs` folder.
+
+3. Pull the model you want:
 
 ```bash
 ollama pull qwen2.5:14b
 ```
 
-3. Verify the model is available:
+4. Verify the model is available:
 
 ```bash
 ollama list
 ```
 
-4. Start the backend with local AI enabled:
+5. Start the backend with local AI enabled:
 
 ```bash
 AI_PROVIDER=ollama OLLAMA_MODEL=qwen2.5:14b ./mvnw spring-boot:run
 ```
 
-5. Start the frontend as usual:
+6. Start the frontend as usual:
 
 ```bash
 cd frontend
@@ -94,3 +102,4 @@ curl http://localhost:11434/api/chat -d '{
   "stream": false
 }'
 ```
+By default, tutor and generation requests inherit `OLLAMA_MODEL`. You only need `OLLAMA_TUTOR_MODEL` or `OLLAMA_GENERATION_MODEL` if you intentionally want different models per task.
